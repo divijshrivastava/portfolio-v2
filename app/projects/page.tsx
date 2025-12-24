@@ -20,7 +20,7 @@ export default async function ProjectsPage() {
       <div className="max-w-6xl mx-auto">
         <h1 className="text-4xl sm:text-5xl font-bold mb-4 text-primary">Projects</h1>
         <p className="text-xl text-muted-foreground mb-12">
-          A showcase of my work including websites, applications, YouTube videos, and coding projects.
+          Detailed case studies of systems I've architected and built, from initial problem definition to production deployment and impact.
         </p>
 
         {projects && projects.length > 0 ? (

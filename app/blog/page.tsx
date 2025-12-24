@@ -20,7 +20,7 @@ export default async function BlogPage() {
       <div className="max-w-4xl mx-auto">
         <h1 className="text-4xl sm:text-5xl font-bold mb-4 text-primary">Blog</h1>
         <p className="text-xl text-muted-foreground mb-12">
-          Technical articles, tutorials, and insights about web development and programming.
+          I write about real engineering problems, architectural trade-offs, and lessons learned from building production systems. Expect deep dives into system design, performance optimization, and the practical challenges of full-stack development—no fluff, just engineering insights.
         </p>
 
         {blogs && blogs.length > 0 ? (

@@ -39,14 +39,10 @@ export default function AboutPage() {
               <h2 className="text-2xl font-bold mb-4">Hello!</h2>
               <div className="space-y-4 text-muted-foreground">
                 <p>
-                  I'm Divij Shrivastava, a web developer with a passion for building beautiful,
-                  functional, and user-friendly applications. I love working with modern technologies
-                  and staying up-to-date with the latest trends in web development.
+                  With 8+ years of experience as a senior software engineer, I've built production systems across fintech, e-commerce, and enterprise domains. I take ownership of projects from conception to deployment, collaborating with cross-functional teams to deliver solutions that balance technical excellence with business impact.
                 </p>
                 <p>
-                  I specialize in full-stack development, with expertise in both frontend and backend
-                  technologies. I enjoy tackling challenging problems and creating efficient solutions
-                  that make a difference.
+                  My work spans full-stack web development, distributed systems, and data engineering, always with a focus on scalability, performance, and maintainability. I enjoy tackling challenging problems and creating efficient solutions that make a difference.
                 </p>
                 <p>
                   When I'm not coding, you can find me writing technical articles, contributing to

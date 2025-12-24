@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Mail, MessageSquare, Send } from 'lucide-react';
+import { Mail, MessageSquare, Send, Github, Linkedin, ExternalLink } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 
 export default function ContactPage() {
@@ -40,7 +40,7 @@ export default function ContactPage() {
       <div className="max-w-2xl mx-auto">
         <h1 className="text-4xl sm:text-5xl font-bold mb-4 text-primary">Get In Touch</h1>
         <p className="text-xl text-muted-foreground mb-12">
-          Have a question or want to work together? I'd love to hear from you!
+          I'm open to full-time engineering roles, freelance projects, technical consulting, open-source collaboration, and speaking/mentoring opportunities. Let's discuss how we can work together.
         </p>
 
         {submitted ? (
@@ -49,7 +49,7 @@ export default function ContactPage() {
               <MessageSquare className="h-16 w-16 text-primary mx-auto mb-4" />
               <h2 className="text-2xl font-bold mb-2">Thank You!</h2>
               <p className="text-muted-foreground mb-6">
-                Your message has been sent successfully. I'll get back to you soon!
+                Thank you! I've received your message and will get back to you soon.
               </p>
               <Button onClick={() => setSubmitted(false)}>
                 Send Another Message
@@ -61,7 +61,7 @@ export default function ContactPage() {
             <CardHeader>
               <CardTitle>Send me a message</CardTitle>
               <CardDescription>
-                Fill out the form below and I'll get back to you as soon as possible.
+                Fill out the form below and I'll get back to you within 24-48 hours.
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -99,7 +99,7 @@ export default function ContactPage() {
                   </label>
                   <Textarea
                     id="message"
-                    placeholder="Your message..."
+                    placeholder="Tell me about your project, role, or how I can help..."
                     rows={6}
                     value={formData.message}
                     onChange={(e) => setFormData({ ...formData, message: e.target.value })}
@@ -122,23 +122,68 @@ export default function ContactPage() {
           </Card>
         )}
 
-        <div className="mt-12">
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-start gap-4">
-                <Mail className="h-6 w-6 text-primary mt-1" />
-                <div>
-                  <h3 className="font-semibold mb-1">Email</h3>
-                  <a
-                    href="mailto:contact@divij.dev"
-                    className="text-muted-foreground hover:text-primary transition-colors"
-                  >
-                    contact@divij.dev
-                  </a>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+        <div className="mt-12 space-y-6">
+          <div>
+            <h2 className="text-2xl font-bold mb-6 text-primary">Connect With Me</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <Card className="hover:border-primary/30 transition-all duration-300">
+                <CardContent className="p-6">
+                  <div className="flex items-start gap-4">
+                    <Mail className="h-6 w-6 text-primary mt-1 flex-shrink-0" />
+                    <div>
+                      <h3 className="font-semibold mb-1">Email</h3>
+                      <a
+                        href="mailto:contact@divij.dev"
+                        className="text-muted-foreground hover:text-primary transition-colors"
+                      >
+                        contact@divij.dev
+                      </a>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="hover:border-primary/30 transition-all duration-300">
+                <CardContent className="p-6">
+                  <div className="flex items-start gap-4">
+                    <Github className="h-6 w-6 text-primary mt-1 flex-shrink-0" />
+                    <div>
+                      <h3 className="font-semibold mb-1">GitHub</h3>
+                      <a
+                        href="https://github.com/divijshrivastava"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-muted-foreground hover:text-primary transition-colors flex items-center gap-1"
+                      >
+                        View my code and open-source contributions
+                        <ExternalLink className="h-3 w-3" />
+                      </a>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="hover:border-primary/30 transition-all duration-300">
+                <CardContent className="p-6">
+                  <div className="flex items-start gap-4">
+                    <Linkedin className="h-6 w-6 text-primary mt-1 flex-shrink-0" />
+                    <div>
+                      <h3 className="font-semibold mb-1">LinkedIn</h3>
+                      <a
+                        href="https://linkedin.com/in/divijshrivastava"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-muted-foreground hover:text-primary transition-colors flex items-center gap-1"
+                      >
+                        Connect on LinkedIn
+                        <ExternalLink className="h-3 w-3" />
+                      </a>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </div>
         </div>
       </div>
     </div>
