@@ -1,0 +1,160 @@
+@import "tailwindcss";
+
+@theme {
+  /* Color palette */
+  --color-primary: oklch(52% 0.19 205);
+  --color-primary-foreground: oklch(100% 0 0);
+  --color-secondary: oklch(68% 0.19 45);
+  --color-secondary-foreground: oklch(100% 0 0);
+
+  --color-background: oklch(98% 0.01 240);
+  --color-foreground: oklch(15% 0.01 240);
+
+  --color-card: oklch(100% 0 0);
+  --color-card-foreground: oklch(15% 0.01 240);
+
+  --color-popover: oklch(100% 0 0);
+  --color-popover-foreground: oklch(15% 0.01 240);
+
+  --color-muted: oklch(96% 0.01 240);
+  --color-muted-foreground: oklch(50% 0.01 240);
+
+  --color-accent: oklch(96% 0.02 45);
+  --color-accent-foreground: oklch(40% 0.18 45);
+
+  --color-destructive: oklch(62% 0.23 25);
+  --color-destructive-foreground: oklch(98% 0 0);
+
+  --color-border: oklch(90% 0.01 240);
+  --color-input: oklch(90% 0.01 240);
+  --color-ring: oklch(52% 0.19 205);
+
+  --radius-lg: 0.5rem;
+  --radius-md: calc(0.5rem - 2px);
+  --radius-sm: calc(0.5rem - 4px);
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  }
+}
+
+/* Prose styles for blog content */
+.prose {
+  @apply text-foreground max-w-none;
+}
+
+.prose h1,
+.prose h2,
+.prose h3,
+.prose h4,
+.prose h5,
+.prose h6 {
+  @apply font-bold mb-4 mt-8;
+}
+
+.prose h1 { @apply text-4xl; }
+.prose h2 { @apply text-3xl; }
+.prose h3 { @apply text-2xl; }
+.prose h4 { @apply text-xl; }
+
+.prose p {
+  @apply mb-4 leading-7;
+}
+
+.prose a {
+  @apply text-primary underline;
+}
+
+.prose a:hover {
+  @apply opacity-80;
+}
+
+.prose ul,
+.prose ol {
+  @apply mb-4 ml-6;
+}
+
+.prose ul {
+  @apply list-disc;
+}
+
+.prose ol {
+  @apply list-decimal;
+}
+
+.prose li {
+  @apply mb-2;
+}
+
+.prose code {
+  @apply bg-muted px-1 py-0.5 rounded text-sm;
+}
+
+.prose pre {
+  @apply bg-muted p-4 rounded-lg overflow-x-auto mb-4;
+}
+
+.prose pre code {
+  @apply bg-transparent p-0;
+}
+
+.prose blockquote {
+  @apply border-l-4 border-primary pl-4 italic my-4;
+}
+
+.prose img {
+  @apply rounded-lg my-6;
+}
+
+.prose table {
+  @apply w-full border-collapse mb-4;
+}
+
+.prose th,
+.prose td {
+  @apply border border-border px-4 py-2;
+}
+
+.prose th {
+  @apply bg-muted font-semibold;
+}
+
+/* Tiptap Editor Styles */
+.ProseMirror {
+  outline: none;
+}
+
+.ProseMirror p.is-editor-empty:first-child::before {
+  @apply text-muted-foreground;
+  content: attr(data-placeholder);
+  float: left;
+  height: 0;
+  pointer-events: none;
+}
+
+.ProseMirror img {
+  @apply max-w-full h-auto rounded-lg my-4;
+}
+
+.ProseMirror code {
+  @apply bg-muted px-1 py-0.5 rounded text-sm;
+}
+
+.ProseMirror pre {
+  @apply bg-muted p-4 rounded-lg overflow-x-auto my-4;
+}
+
+.ProseMirror pre code {
+  @apply bg-transparent p-0;
+}
+
+.ProseMirror blockquote {
+  @apply border-l-4 border-primary pl-4 my-4 italic;
+}
