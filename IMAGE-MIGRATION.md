@@ -2,46 +2,44 @@
 
 Your blogs are imported but images aren't showing because they reference old server paths like `/images/blog/199.jpg`.
 
+## Images Location
+
+**Server**: Hostinger Ubuntu server
+**Server Path**: `/home/divij/divij_tech_volume/images_volume`
+**Username**: `divij`
+**Format**: Numbered files (e.g., `199.jpg`, `200.jpg`)
+**Encryption**: NOT encrypted (standard JPEG/PNG files)
+
+> **Note**: In all commands below, replace `your_server` with your actual Hostinger server IP address or hostname.
+
 ## Quick Steps
 
-### Step 1: Find Images on Your Server
+### Step 1: Download Images from Server
 
-SSH into your Ubuntu server:
-
-```bash
-ssh divij@your_server
-```
-
-Find where images are stored:
+Download all blog images from your Ubuntu server to your local machine:
 
 ```bash
-# Common locations
-ls -la /var/www/html/images/blog/
-ls -la /var/www/*/images/blog/
-ls -la ~/public_html/images/blog/
+# Create local directory for images
+mkdir -p ~/blog-images
 
-# Or search for them
-find / -path "*/images/blog/*.jpg" -o -path "*/images/blog/*.png" 2>/dev/null | head -20
+# Download all images from server
+scp -r divij@your_server:/home/divij/divij_tech_volume/images_volume/* ~/blog-images/
+
+# Or if you have the server IP/hostname
+# scp -r divij@HOSTINGER_IP:/home/divij/divij_tech_volume/images_volume/* ~/blog-images/
 ```
 
-### Step 2: Download Images to Local Machine
+Replace `your_server` or `HOSTINGER_IP` with your actual server address.
 
-Once you find the images folder, download them:
-
-```bash
-# From your LOCAL machine
-scp -r divij@your_server:/path/to/images/blog ./blog-images/
-
-# Example:
-# scp -r divij@server:/var/www/html/images/blog ./blog-images/
+**Expected output:**
+```
+199.jpg                100%  1.4MB   500KB/s   00:03
+200.jpg                100%  856KB   450KB/s   00:02
+201.jpg                100%  1.2MB   520KB/s   00:02
+...
 ```
 
-You should now have a `blog-images/` folder with files like:
-- `199.jpg`
-- `200.jpg`
-- etc.
-
-### Step 3: Create Supabase Storage Bucket
+### Step 2: Create Supabase Storage Bucket
 
 1. Go to **Supabase Dashboard** → **Storage**
 2. Click **Create new bucket**
@@ -49,29 +47,45 @@ You should now have a `blog-images/` folder with files like:
 4. ✅ Check **Public bucket**
 5. Click **Create bucket**
 
-### Step 4: Upload Images to Supabase
+### Step 3: Upload Images to Supabase
 
-#### Option A: Using Supabase Dashboard (Easy)
+#### Option A: Using Supabase Dashboard (Easiest)
 
-1. Click on the `blog-images` bucket
-2. Click **Upload file**
-3. Select all images from `blog-images/` folder
-4. Click **Upload**
+1. Open Finder and go to `~/blog-images/` (or wherever you downloaded the images)
+2. In Supabase Dashboard, click on the `blog-images` bucket
+3. Drag and drop all images (or use "Upload file" button)
+4. Wait for upload to complete
 
-#### Option B: Using Supabase CLI (Batch upload)
+#### Option B: Using Supabase CLI (Batch Upload)
 
 ```bash
-# Install Supabase CLI
+# Install Supabase CLI (if not already installed)
 npm install -g supabase
 
-# Login
+# Login to Supabase
 supabase login
 
-# Upload all images
-supabase storage upload blog-images blog-images/*
+# Navigate to downloaded images directory
+cd ~/blog-images
+
+# Upload all images at once
+for file in *.{jpg,jpeg,png}; do
+  [ -f "$file" ] && supabase storage upload blog-images "$file" --experimental
+done
 ```
 
-### Step 5: Update Blog URLs in Database
+#### Option C: Automated Script
+
+Update the `IMAGES_DIR` in `scripts/upload-blog-images.sh` to point to your download location, then:
+
+```bash
+# Edit the script to change IMAGES_DIR to ~/blog-images
+# Then run:
+chmod +x scripts/upload-blog-images.sh
+./scripts/upload-blog-images.sh
+```
+
+### Step 4: Update Blog URLs in Database
 
 Run the update script:
 
@@ -109,13 +123,15 @@ Updating image URLs...
 ✓ Updated 15 blogs
 ```
 
-### Step 6: Verify Images
+### Step 5: Verify Images
 
 Visit your blog posts to verify images are loading:
 
 ```
 http://localhost:3000/blog
 ```
+
+Or check individual blog URLs to see the images.
 
 ---
 
@@ -152,6 +168,27 @@ for file in image_*.jpg; do
   mv "$file" "${file#image_}"
 done
 ```
+
+### Don't Know Your Server Address?
+
+If you're unsure of your Hostinger server IP or hostname:
+
+1. **Check Hostinger Control Panel**:
+   - Log in to Hostinger
+   - Go to "Hosting" or "VPS"
+   - Your server IP should be displayed
+
+2. **Check SSH Config**:
+   ```bash
+   cat ~/.ssh/config
+   ```
+   Look for entries related to your Hostinger server
+
+3. **Try domain name**:
+   ```bash
+   # If your site is divij.tech, try:
+   scp -r divij@divij.tech:/home/divij/divij_tech_volume/images_volume/* ~/blog-images/
+   ```
 
 ### Some Images Missing
 
@@ -197,11 +234,33 @@ WHERE
 
 ## Summary
 
-1. ✅ Find images on server
-2. ✅ Download to local machine
-3. ✅ Create Supabase Storage bucket (`blog-images`, public)
-4. ✅ Upload images to bucket
-5. ✅ Run `node scripts/update-blog-images.js`
-6. ✅ Verify on website
+1. ✅ Download images from Hostinger Ubuntu server (`/home/divij/divij_tech_volume/images_volume`)
+2. ✅ Create Supabase Storage bucket (`blog-images`, public)
+3. ✅ Upload images to Supabase Storage bucket
+4. ✅ Run `node scripts/update-blog-images.js` to update database URLs
+5. ✅ Verify on website
 
 Your blog images should now be loading from Supabase Storage!
+
+## Quick Command Summary
+
+```bash
+# 1. Download images from server
+mkdir -p ~/blog-images
+scp -r divij@your_server:/home/divij/divij_tech_volume/images_volume/* ~/blog-images/
+
+# 2. Create bucket in Supabase Dashboard (blog-images, public)
+
+# 3. Upload images via CLI
+cd ~/blog-images
+supabase login
+for file in *.{jpg,jpeg,png}; do
+  [ -f "$file" ] && supabase storage upload blog-images "$file" --experimental
+done
+
+# 4. Update database
+node scripts/update-blog-images.js
+
+# 5. Verify
+# Visit http://localhost:3000/blog
+```

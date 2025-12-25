@@ -14,49 +14,58 @@ export async function generateStaticParams() {
 }
 
 export async function generateMetadata({ params }: { params: { slug: string } }) {
-  const { slug } = await Promise.resolve(params);
-  const supabase = await createClient();
+  try {
+    const { slug } = await Promise.resolve(params);
+    const supabase = await createClient();
 
-  const { data: blog } = await supabase
-    .from('blogs')
-    .select('title, summary')
-    .eq('slug', slug)
-    .eq('status', 'published')
-    .single();
+    const { data: blog, error } = await supabase
+      .from('blogs')
+      .select('title, summary')
+      .eq('slug', slug)
+      .eq('status', 'published')
+      .single();
 
-  if (!blog) {
+    if (error || !blog) {
+      console.error('Metadata fetch error:', error);
+      return {
+        title: 'Blog Not Found',
+      };
+    }
+
     return {
-      title: 'Blog Not Found',
+      title: blog.title,
+      description: blog.summary || blog.title,
+    };
+  } catch (error) {
+    console.error('Metadata generation error:', error);
+    return {
+      title: 'Blog',
     };
   }
-
-  return {
-    title: blog.title,
-    description: blog.summary || blog.title,
-  };
 }
 
 export default async function BlogPost({ params }: { params: { slug: string } }) {
-  const { slug } = await Promise.resolve(params);
-  const supabase = await createClient();
+  try {
+    const { slug } = await Promise.resolve(params);
+    const supabase = await createClient();
 
-  const { data: blog, error } = await supabase
-    .from('blogs')
-    .select('*')
-    .eq('slug', slug)
-    .eq('status', 'published')
-    .single();
+    const { data: blog, error } = await supabase
+      .from('blogs')
+      .select('*')
+      .eq('slug', slug)
+      .eq('status', 'published')
+      .single();
 
-  if (error || !blog) {
-    console.error('Blog fetch error:', error);
-    notFound();
-  }
+    if (error || !blog) {
+      console.error('Blog fetch error:', error);
+      notFound();
+    }
 
-  // Increment view count
-  await supabase
-    .from('blogs')
-    .update({ views: (blog.views || 0) + 1 })
-    .eq('id', blog.id);
+    // Increment view count
+    await supabase
+      .from('blogs')
+      .update({ views: (blog.views || 0) + 1 })
+      .eq('id', blog.id);
 
   return (
     <div className="min-h-screen">
@@ -109,4 +118,8 @@ export default async function BlogPost({ params }: { params: { slug: string } })
       </article>
     </div>
   );
+  } catch (error) {
+    console.error('Blog page render error:', error);
+    notFound();
+  }
 }

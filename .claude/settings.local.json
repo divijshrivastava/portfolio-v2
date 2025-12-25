@@ -1,0 +1,21 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git push:*)",
+      "Bash(psql:*)",
+      "Bash(chmod:*)",
+      "Bash(xxd:*)",
+      "Bash(open:*)",
+      "Bash(ls:*)",
+      "Bash(file:*)",
+      "Bash(cat:*)",
+      "Bash(python3:*)",
+      "Bash(sips:*)",
+      "Bash(node scripts/update-blog-images.js:*)",
+      "Bash(node:*)",
+      "Bash(curl:*)"
+    ]
+  }
+}
