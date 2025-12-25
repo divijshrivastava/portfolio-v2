@@ -14,8 +14,12 @@ export async function generateStaticParams() {
   return [];
 }
 
-export async function generateMetadata({ params }: { params: { slug: string } }) {
-  const { slug } = await Promise.resolve(params);
+export async function generateMetadata({
+  params
+}: {
+  params: Promise<{ slug: string }>
+}) {
+  const { slug } = await params;
   const supabase = await createClient();
 
   const { data: project } = await supabase
@@ -37,8 +41,12 @@ export async function generateMetadata({ params }: { params: { slug: string } })
   };
 }
 
-export default async function ProjectDetail({ params }: { params: { slug: string } }) {
-  const { slug } = await Promise.resolve(params);
+export default async function ProjectDetail({
+  params
+}: {
+  params: Promise<{ slug: string }>
+}) {
+  const { slug } = await params;
   const supabase = await createClient();
 
   const { data: project } = await supabase

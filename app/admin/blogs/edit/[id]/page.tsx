@@ -11,7 +11,7 @@ import { createClient } from '@/lib/supabase/client';
 import { ArrowLeft, Save, Eye, Trash2 } from 'lucide-react';
 import Link from 'next/link';
 
-export default function EditBlogPage({ params }: { params: { id: string } }) {
+export default function EditBlogPage({ params }: any) {
   const router = useRouter();
   const [id, setId] = useState<string | null>(null);
   const [title, setTitle] = useState('');
