@@ -13,40 +13,41 @@ export async function generateStaticParams() {
   return [];
 }
 
-export async function generateMetadata({
-  params
-}: {
-  params: Promise<{ slug: string }>
-}) {
-  try {
-    const { slug } = await params;
-    const supabase = await createClient();
+// Temporarily disabled to debug Vercel 500 error
+// export async function generateMetadata({
+//   params
+// }: {
+//   params: Promise<{ slug: string }>
+// }) {
+//   try {
+//     const { slug } = await params;
+//     const supabase = await createClient();
 
-    const { data: blog, error } = await supabase
-      .from('blogs')
-      .select('title, summary')
-      .eq('slug', slug)
-      .eq('status', 'published')
-      .single();
+//     const { data: blog, error } = await supabase
+//       .from('blogs')
+//       .select('title, summary')
+//       .eq('slug', slug)
+//       .eq('status', 'published')
+//       .single();
 
-    if (error || !blog) {
-      console.error('Metadata fetch error:', error);
-      return {
-        title: 'Blog Not Found',
-      };
-    }
+//     if (error || !blog) {
+//       console.error('Metadata fetch error:', error);
+//       return {
+//         title: 'Blog Not Found',
+//       };
+//     }
 
-    return {
-      title: blog.title,
-      description: blog.summary || blog.title,
-    };
-  } catch (error) {
-    console.error('Metadata generation error:', error);
-    return {
-      title: 'Blog',
-    };
-  }
-}
+//     return {
+//       title: blog.title,
+//       description: blog.summary || blog.title,
+//     };
+//   } catch (error) {
+//     console.error('Metadata generation error:', error);
+//     return {
+//       title: 'Blog',
+//     };
+//   }
+// }
 
 export default async function BlogPost({
   params
