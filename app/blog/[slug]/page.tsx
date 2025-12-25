@@ -13,9 +13,9 @@ export async function generateStaticParams() {
   return [];
 }
 
-export async function generateMetadata({ params }: { params: { slug: string } }) {
+export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }) {
   try {
-    const { slug } = await Promise.resolve(params);
+    const { slug } = await params;
     const supabase = await createClient();
 
     const { data: blog, error } = await supabase
@@ -44,9 +44,9 @@ export async function generateMetadata({ params }: { params: { slug: string } })
   }
 }
 
-export default async function BlogPost({ params }: { params: { slug: string } }) {
+export default async function BlogPost({ params }: { params: Promise<{ slug: string }> }) {
   try {
-    const { slug } = await Promise.resolve(params);
+    const { slug } = await params;
     const supabase = await createClient();
 
     const { data: blog, error } = await supabase
@@ -61,11 +61,16 @@ export default async function BlogPost({ params }: { params: { slug: string } })
       notFound();
     }
 
-    // Increment view count
-    await supabase
-      .from('blogs')
-      .update({ views: (blog.views || 0) + 1 })
-      .eq('id', blog.id);
+    // Increment view count (fire and forget)
+    try {
+      await supabase
+        .from('blogs')
+        .update({ views: (blog.views || 0) + 1 })
+        .eq('id', blog.id);
+    } catch (viewError) {
+      // Don't fail the page if view count update fails
+      console.error('View count update failed:', viewError);
+    }
 
   return (
     <div className="min-h-screen">
@@ -104,8 +109,6 @@ export default async function BlogPost({ params }: { params: { slug: string } })
                 alt={blog.title}
                 fill
                 className="object-cover"
-                priority
-                unoptimized
               />
             </div>
           )}
