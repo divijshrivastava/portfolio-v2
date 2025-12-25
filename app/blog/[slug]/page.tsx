@@ -54,79 +54,93 @@ export default async function BlogPost({
 }: {
   params: Promise<{ slug: string }>
 }) {
-  const { slug } = await params;
-  const supabase = await createClient();
-
-  const { data: blog, error } = await supabase
-    .from('blogs')
-    .select('*')
-    .eq('slug', slug)
-    .eq('status', 'published')
-    .single();
-
-  if (error || !blog) {
-    console.error('Blog fetch error:', error);
-    notFound();
-  }
-
-  // Increment view count (fire and forget)
   try {
-    await supabase
+    const { slug } = await params;
+    const supabase = await createClient();
+
+    const { data: blog, error } = await supabase
       .from('blogs')
-      .update({ views: (blog.views || 0) + 1 })
-      .eq('id', blog.id);
-  } catch (viewError) {
-    // Don't fail the page if view count update fails
-    console.error('View count update failed:', viewError);
-  }
+      .select('*')
+      .eq('slug', slug)
+      .eq('status', 'published')
+      .single();
 
-  return (
-    <div className="min-h-screen">
-      <article className="container mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <div className="max-w-4xl mx-auto">
-          <Button asChild variant="ghost" className="mb-8">
-            <Link href="/blog">
-              <ArrowLeft className="mr-2 h-4 w-4" />
-              Back to Blog
-            </Link>
-          </Button>
+    if (error || !blog) {
+      console.error('Blog fetch error:', error);
+      notFound();
+    }
 
-          <h1 className="text-4xl sm:text-5xl font-bold mb-6">{blog.title}</h1>
+    // Skip view count for now to isolate issue
+    // try {
+    //   await supabase
+    //     .from('blogs')
+    //     .update({ views: (blog.views || 0) + 1 })
+    //     .eq('id', blog.id);
+    // } catch (viewError) {
+    //   console.error('View count update failed:', viewError);
+    // }
 
-          <div className="flex flex-wrap gap-4 text-muted-foreground mb-8">
-            <div className="flex items-center gap-1">
-              <Calendar className="h-4 w-4" />
-              {new Date(blog.created_at).toLocaleDateString('en-US', {
-                year: 'numeric',
-                month: 'long',
-                day: 'numeric',
-              })}
-            </div>
-            {blog.read_time && (
+    return (
+      <div className="min-h-screen">
+        <article className="container mx-auto px-4 sm:px-6 lg:px-8 py-12">
+          <div className="max-w-4xl mx-auto">
+            <Button asChild variant="ghost" className="mb-8">
+              <Link href="/blog">
+                <ArrowLeft className="mr-2 h-4 w-4" />
+                Back to Blog
+              </Link>
+            </Button>
+
+            <h1 className="text-4xl sm:text-5xl font-bold mb-6">{blog.title}</h1>
+
+            <div className="flex flex-wrap gap-4 text-muted-foreground mb-8">
               <div className="flex items-center gap-1">
-                <Clock className="h-4 w-4" />
-                {blog.read_time} min read
+                <Calendar className="h-4 w-4" />
+                {new Date(blog.created_at).toLocaleDateString('en-US', {
+                  year: 'numeric',
+                  month: 'long',
+                  day: 'numeric',
+                })}
+              </div>
+              {blog.read_time && (
+                <div className="flex items-center gap-1">
+                  <Clock className="h-4 w-4" />
+                  {blog.read_time} min read
+                </div>
+              )}
+            </div>
+
+            {blog.cover_image_url && (
+              <div className="relative w-full h-64 sm:h-96 mb-8 rounded-lg overflow-hidden">
+                <Image
+                  src={blog.cover_image_url}
+                  alt={blog.title}
+                  fill
+                  className="object-cover"
+                />
               </div>
             )}
+
+            <div
+              className="prose prose-lg dark:prose-invert max-w-none"
+              dangerouslySetInnerHTML={{ __html: blog.content }}
+            />
           </div>
-
-          {blog.cover_image_url && (
-            <div className="relative w-full h-64 sm:h-96 mb-8 rounded-lg overflow-hidden">
-              <Image
-                src={blog.cover_image_url}
-                alt={blog.title}
-                fill
-                className="object-cover"
-              />
-            </div>
-          )}
-
-          <div
-            className="prose prose-lg dark:prose-invert max-w-none"
-            dangerouslySetInnerHTML={{ __html: blog.content }}
-          />
+        </article>
+      </div>
+    );
+  } catch (error: any) {
+    console.error('BlogPost error:', error);
+    return (
+      <div className="container mx-auto px-4 py-12">
+        <div className="max-w-2xl mx-auto text-center">
+          <h1 className="text-2xl font-bold mb-4">Error Loading Blog</h1>
+          <p className="text-muted-foreground mb-4">{error?.message || 'Unknown error'}</p>
+          <Button asChild>
+            <Link href="/blog">Back to Blog</Link>
+          </Button>
         </div>
-      </article>
-    </div>
-  );
+      </div>
+    );
+  }
 }
