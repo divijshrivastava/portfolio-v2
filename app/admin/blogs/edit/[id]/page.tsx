@@ -22,6 +22,7 @@ export default function EditBlogPage({ params }: { params: { id: string } }) {
   const [status, setStatus] = useState<'draft' | 'published'>('draft');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [slugError, setSlugError] = useState('');
 
   useEffect(() => {
     Promise.resolve(params).then(resolvedParams => {
@@ -50,6 +51,7 @@ export default function EditBlogPage({ params }: { params: { id: string } }) {
     setContent(blog.content);
     setCoverImage(blog.cover_image_url || '');
     setStatus(blog.status);
+    setSlugError('');
     setIsLoading(false);
   };
 
@@ -58,6 +60,34 @@ export default function EditBlogPage({ params }: { params: { id: string } }) {
       .toLowerCase()
       .replace(/[^a-z0-9]+/g, '-')
       .replace(/^-+|-+$/g, '');
+  };
+
+  const checkSlugAvailability = async (slugToCheck: string): Promise<boolean> => {
+    if (!slugToCheck || !id) return false;
+    
+    const supabase = createClient();
+    const { data, error } = await supabase
+      .from('blogs')
+      .select('id')
+      .eq('slug', slugToCheck)
+      .neq('id', id) // Exclude current blog post
+      .single();
+
+    // If no data found, slug is available
+    return !data && error?.code === 'PGRST116';
+  };
+
+  const handleSlugChange = async (value: string) => {
+    const newSlug = generateSlug(value);
+    setSlug(newSlug);
+    setSlugError('');
+
+    if (newSlug && id) {
+      const isAvailable = await checkSlugAvailability(newSlug);
+      if (!isAvailable) {
+        setSlugError('This slug is already in use. Please choose a different one.');
+      }
+    }
   };
 
   const handleImageUpload = async (file: File): Promise<string> => {
@@ -104,6 +134,18 @@ export default function EditBlogPage({ params }: { params: { id: string } }) {
   const handleSubmit = async (newStatus: 'draft' | 'published') => {
     if (!id) return;
 
+    if (slugError) {
+      alert('Please fix the slug error before submitting.');
+      return;
+    }
+
+    // Double-check slug availability before submitting
+    const isAvailable = await checkSlugAvailability(slug);
+    if (!isAvailable) {
+      setSlugError('This slug is already in use. Please choose a different one.');
+      return;
+    }
+
     setIsSubmitting(true);
 
     const supabase = createClient();
@@ -130,7 +172,15 @@ export default function EditBlogPage({ params }: { params: { id: string } }) {
 
     if (error) {
       console.error('Error updating blog:', error);
-      alert('Error updating blog post');
+      
+      // Handle duplicate slug error specifically
+      if (error.code === '23505' && error.message.includes('slug')) {
+        setSlugError('This slug is already in use. Please choose a different one.');
+        alert('A blog post with this slug already exists. Please change the slug and try again.');
+      } else {
+        alert(`Error updating blog post: ${error.message}`);
+      }
+      
       setIsSubmitting(false);
       return;
     }
@@ -211,9 +261,13 @@ export default function EditBlogPage({ params }: { params: { id: string } }) {
                 id="slug"
                 placeholder="blog-post-url"
                 value={slug}
-                onChange={(e) => setSlug(generateSlug(e.target.value))}
+                onChange={(e) => handleSlugChange(e.target.value)}
                 required
+                className={slugError ? 'border-destructive' : ''}
               />
+              {slugError && (
+                <p className="text-xs text-destructive">{slugError}</p>
+              )}
               <p className="text-xs text-muted-foreground">
                 Preview: /blog/{slug || 'your-slug-here'}
               </p>
