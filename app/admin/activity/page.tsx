@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button';
 interface UserActivity {
   id: string;
   page_visited: string;
-  visitor_ip: string;
+  ip_address: string;
   user_agent: string;
   created_at: string;
 }
@@ -105,7 +105,7 @@ export default function ActivityPage() {
                     <div className="text-sm text-muted-foreground space-y-1">
                       <div className="flex items-center gap-2">
                         <span className="font-medium">IP:</span>
-                        <span>{activity.visitor_ip}</span>
+                        <span>{activity.ip_address}</span>
                       </div>
                       <div className="flex items-start gap-2">
                         <span className="font-medium">User Agent:</span>

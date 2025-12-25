@@ -50,7 +50,7 @@ async function trackVisit(request: NextRequest, path: string) {
     // Insert activity record
     const { data, error } = await supabase.from('user_activity').insert({
       page_visited: path,
-      visitor_ip: visitorIp,
+      ip_address: visitorIp,
       user_agent: userAgent,
     })
 
