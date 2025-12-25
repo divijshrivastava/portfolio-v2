@@ -5,6 +5,21 @@ Your database structure:
 - Blog table: `BLOG` (uppercase)
 - Projects: Multiple tables (`PROJECT`, `CODE_PROJECT`, `VIDEO_PROJECT`, etc.)
 
+## Your Database Structure
+
+Based on inspection, your BLOG table has:
+- **HEADING** → Blog title
+- **BLOG_TITLE_LINK** → URL slug
+- **CONTENT** → Blog content (HTML)
+- **BLOG_SUMMARY** → Short description
+- **STATUS** → LIVE (published) or PENDING (draft)
+- **COVER_PHOTO_ID** → Image ID reference
+- **MINUTES_TO_READ** → Reading time
+- **PUBLISH_TIMESTAMP** → Publication date
+- **VIEWS** → View count
+
+Total blogs: **26**
+
 ## Quick Migration (3 Steps)
 
 ### Step 1: Inspect Your Database Structure (Optional but Recommended)
@@ -72,8 +87,8 @@ Size: 245K
 # Download to local machine
 scp user@your_server:~/blog-export/blogs.json ./exports/
 
-# Import to Supabase
-node scripts/import-blogs-flexible.js
+# Import to Supabase (use the custom divij script)
+node scripts/import-blogs-divij.js
 ```
 
 **Expected output:**
@@ -135,17 +150,21 @@ Done! ✅
 
 ## Column Name Mapping
 
-The import script automatically handles these variations:
+The `import-blogs-divij.js` script maps your columns:
 
-| Supabase Field | MySQL Column (any of these) |
-|----------------|----------------------------|
-| title | `title`, `TITLE`, `blog_title` |
-| content | `content`, `CONTENT`, `body`, `BODY` |
-| summary | `summary`, `SUMMARY`, `description`, `excerpt` |
-| slug | `slug`, `SLUG`, `url_slug` (or auto-generated) |
-| cover_image_url | `cover_image_url`, `image_url`, `COVER_IMAGE` |
-| status | `status`, `STATUS` |
-| created_at | `created_at`, `CREATED_AT`, `date_created` |
+| Supabase Field | MySQL Column | Notes |
+|----------------|--------------|-------|
+| title | `HEADING` | Blog title |
+| slug | `BLOG_TITLE_LINK` | URL-friendly slug |
+| content | `CONTENT` | HTML content |
+| summary | `BLOG_SUMMARY` | Short description |
+| status | `STATUS` | LIVE → published, else → draft |
+| cover_image_url | `COVER_PHOTO_ID` | ⚠️ Converted to path `/images/blog/ID.jpg` |
+| thumbnail_url | `BLOG_SUMMARY_IMAGE_ID` | ⚠️ Converted to path `/images/blog/ID.jpg` |
+| read_time | `MINUTES_TO_READ` | Reading time in minutes |
+| views | `VIEWS` | View count |
+| created_at | `PUBLISH_TIMESTAMP` | Publication date |
+| published_at | `PUBLISH_TIMESTAMP` | Only if STATUS=LIVE |
 
 ---
 
