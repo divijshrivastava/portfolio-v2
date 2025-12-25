@@ -54,7 +54,7 @@ export default function AdminResumePage() {
     try {
       const formData = new FormData();
       formData.append('file', file);
-      formData.append('bucket', 'resumes');
+      formData.append('bucket', 'resume-files');
 
       const response = await fetch('/api/upload/image', {
         method: 'POST',

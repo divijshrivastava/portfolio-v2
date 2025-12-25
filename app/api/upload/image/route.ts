@@ -44,8 +44,8 @@ export async function POST(request: NextRequest) {
     const validImageTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
     const validResumeTypes = ['application/pdf'];
 
-    const validTypes = bucket === 'resumes' ? validResumeTypes : validImageTypes;
-    const fileTypeLabel = bucket === 'resumes' ? 'PDF files' : 'images';
+    const validTypes = bucket === 'resume-files' ? validResumeTypes : validImageTypes;
+    const fileTypeLabel = bucket === 'resume-files' ? 'PDF files' : 'images';
 
     if (!validTypes.includes(file.type)) {
       return NextResponse.json(
