@@ -40,11 +40,16 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Validate file type
-    const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
+    // Validate file type based on bucket
+    const validImageTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
+    const validResumeTypes = ['application/pdf'];
+
+    const validTypes = bucket === 'resumes' ? validResumeTypes : validImageTypes;
+    const fileTypeLabel = bucket === 'resumes' ? 'PDF files' : 'images';
+
     if (!validTypes.includes(file.type)) {
       return NextResponse.json(
-        { error: 'Invalid file type. Only images are allowed.' },
+        { error: `Invalid file type. Only ${fileTypeLabel} are allowed.` },
         { status: 400 }
       );
     }
