@@ -17,6 +17,7 @@ export function HeroImage() {
             className="object-cover object-[center_top]"
             style={{ inset: '-1px 0 0 0', objectPosition: 'center 30%' }}
             priority
+            unoptimized
             sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
             onError={() => setImageError(true)}
           />
