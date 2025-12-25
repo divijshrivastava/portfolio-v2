@@ -40,20 +40,15 @@ export default async function BlogPost({ params }: { params: { slug: string } })
   const { slug } = await Promise.resolve(params);
   const supabase = await createClient();
 
-  const { data: blog } = await supabase
+  const { data: blog, error } = await supabase
     .from('blogs')
-    .select(`
-      *,
-      profiles (
-        full_name,
-        avatar_url
-      )
-    `)
+    .select('*')
     .eq('slug', slug)
     .eq('status', 'published')
     .single();
 
-  if (!blog) {
+  if (error || !blog) {
+    console.error('Blog fetch error:', error);
     notFound();
   }
 
@@ -101,6 +96,7 @@ export default async function BlogPost({ params }: { params: { slug: string } })
                 fill
                 className="object-cover"
                 priority
+                unoptimized
               />
             </div>
           )}
