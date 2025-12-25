@@ -78,6 +78,7 @@ async function importToSupabase() {
     for (const project of projectsData) {
       const { error } = await supabase.from('projects').insert({
         title: project.title,
+        slug: project.slug || generateSlug(project.title),
         description: project.description,
         image_url: project.image || project.image_url,
         project_url: project.url || project.project_url,
