@@ -34,9 +34,8 @@
   --radius-sm: calc(0.5rem - 4px);
 }
 
-@media (prefers-color-scheme: dark) {
-  @theme {
-    /* Dark mode colors */
+@layer base {
+  .dark {
     --color-primary: oklch(60% 0.19 205);
     --color-primary-foreground: oklch(15% 0.01 240);
     --color-secondary: oklch(35% 0.1 45);
