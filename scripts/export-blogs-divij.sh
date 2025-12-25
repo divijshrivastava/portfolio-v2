@@ -1,7 +1,8 @@
 #!/bin/bash
 
 #########################################################
-# Export Blogs from divij_tech_db MySQL to JSON
+# Export Blogs from divij_tech_db BLOG table to JSON
+# Uses exact column names from BLOG table
 #
 # Usage:
 #   1. Upload to server: scp scripts/export-blogs-divij.sh user@server:~/
@@ -22,9 +23,9 @@ echo "=========================================="
 echo ""
 
 # Get MySQL credentials
-echo -n "MySQL Username [root]: "
+echo -n "MySQL Username [divij]: "
 read MYSQL_USER
-MYSQL_USER=${MYSQL_USER:-root}
+MYSQL_USER=${MYSQL_USER:-divij}
 
 echo -n "MySQL Password: "
 read -s MYSQL_PASSWORD
@@ -60,31 +61,31 @@ fi
 OUTPUT_DIR="./blog-export"
 mkdir -p "$OUTPUT_DIR"
 
-# Export blogs to JSON
+# Export blogs to JSON with exact column names
 echo -n "Exporting blogs to JSON... "
 
-# Get all column names dynamically
-COLUMNS=$(mysql -u"$MYSQL_USER" -p"$MYSQL_PASSWORD" "$MYSQL_DATABASE" \
-    -se "SELECT GROUP_CONCAT(COLUMN_NAME) FROM INFORMATION_SCHEMA.COLUMNS
-         WHERE TABLE_SCHEMA='$MYSQL_DATABASE' AND TABLE_NAME='BLOG'")
-
-# Build JSON_OBJECT dynamically
-JSON_FIELDS=""
-IFS=',' read -ra COLS <<< "$COLUMNS"
-for col in "${COLS[@]}"; do
-    if [ -n "$JSON_FIELDS" ]; then
-        JSON_FIELDS="$JSON_FIELDS, "
-    fi
-    JSON_FIELDS="$JSON_FIELDS'$col', $col"
-done
-
-# Export with all columns
-mysql -u"$MYSQL_USER" -p"$MYSQL_PASSWORD" "$MYSQL_DATABASE" \
-    -e "SELECT JSON_ARRAYAGG(JSON_OBJECT($JSON_FIELDS)) as json
-        FROM BLOG
-        ORDER BY created_at DESC" \
-    --skip-column-names \
-    --raw > "$OUTPUT_DIR/blogs.json"
+mysql -u"$MYSQL_USER" -p"$MYSQL_PASSWORD" "$MYSQL_DATABASE" <<'EOF' --skip-column-names --raw > "$OUTPUT_DIR/blogs.json"
+SELECT JSON_ARRAYAGG(
+    JSON_OBJECT(
+        'BLOG_ID', BLOG_ID,
+        'PUBLISH_TIMESTAMP', PUBLISH_TIMESTAMP,
+        'HEADING', HEADING,
+        'MINUTES_TO_READ', MINUTES_TO_READ,
+        'COVER_PHOTO_ID', COVER_PHOTO_ID,
+        'CONTENT', CONTENT,
+        'UPVOTES', UPVOTES,
+        'VIEWS', VIEWS,
+        'AUTHOR_ID', AUTHOR_ID,
+        'COVER_PHOTO_ID_DESCRIPTION', COVER_PHOTO_ID_DESCRIPTION,
+        'BLOG_SUMMARY_IMAGE_ID', BLOG_SUMMARY_IMAGE_ID,
+        'STATUS', STATUS,
+        'BLOG_SUMMARY', BLOG_SUMMARY,
+        'BLOG_TITLE_LINK', BLOG_TITLE_LINK
+    )
+) as json
+FROM BLOG
+ORDER BY PUBLISH_TIMESTAMP DESC;
+EOF
 
 echo -e "${GREEN}✓ Done${NC}"
 echo ""
@@ -103,18 +104,14 @@ echo ""
 echo "Preview (latest blog):"
 echo "---"
 mysql -u"$MYSQL_USER" -p"$MYSQL_PASSWORD" "$MYSQL_DATABASE" \
-    -e "SELECT * FROM BLOG ORDER BY created_at DESC LIMIT 1\G" | head -20
-echo "..."
+    -e "SELECT HEADING, STATUS, PUBLISH_TIMESTAMP FROM BLOG ORDER BY PUBLISH_TIMESTAMP DESC LIMIT 1"
 echo "---"
 echo ""
 
 echo -e "${YELLOW}Next steps:${NC}"
 echo "  1. Download this file to your local machine:"
-echo "     ${GREEN}scp user@server:$OUTPUT_DIR/blogs.json ./exports/${NC}"
+echo "     ${GREEN}scp divij@your_server:$OUTPUT_DIR/blogs.json ./exports/${NC}"
 echo ""
 echo "  2. Then import to Supabase:"
-echo "     ${GREEN}node scripts/import-blogs-only.js${NC}"
-echo ""
-echo "  3. Or inspect the JSON file:"
-echo "     ${GREEN}cat $OUTPUT_DIR/blogs.json | jq '.[0]'${NC}"
+echo "     ${GREEN}node scripts/import-blogs-divij.js${NC}"
 echo ""
