@@ -36,25 +36,30 @@ export default function NewBlogPage() {
   };
 
   const handleImageUpload = async (file: File): Promise<string> => {
-    const supabase = createClient();
-    const fileExt = file.name.split('.').pop();
-    const fileName = `${Math.random().toString(36).substring(2)}.${fileExt}`;
-    const filePath = `${fileName}`;
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('bucket', 'blog-images');
 
-    const { error: uploadError } = await supabase.storage
-      .from('blog-images')
-      .upload(filePath, file);
+      const response = await fetch('/api/upload/image', {
+        method: 'POST',
+        body: formData,
+      });
 
-    if (uploadError) {
-      console.error('Upload error:', uploadError);
+      if (!response.ok) {
+        const error = await response.json();
+        console.error('Upload error:', error);
+        alert(error.error || 'Failed to upload image');
+        return '';
+      }
+
+      const data = await response.json();
+      return data.url;
+    } catch (error) {
+      console.error('Upload error:', error);
+      alert('Failed to upload image');
       return '';
     }
-
-    const { data: { publicUrl } } = supabase.storage
-      .from('blog-images')
-      .getPublicUrl(filePath);
-
-    return publicUrl;
   };
 
   const handleCoverImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
