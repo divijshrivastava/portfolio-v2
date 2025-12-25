@@ -47,32 +47,13 @@ export default async function ResumePage() {
             </Card>
 
             <Card>
-              <CardContent className="p-8">
-                <h2 className="text-2xl font-bold mb-6">Experience & Education</h2>
-                <div className="space-y-6">
-                  <div>
-                    <h3 className="text-lg font-semibold">Professional Summary</h3>
-                    <p className="text-muted-foreground mt-2">
-                      Full-stack web developer with experience in building modern, scalable web applications
-                      using cutting-edge technologies. Passionate about clean code, user experience, and
-                      continuous learning.
-                    </p>
-                  </div>
-
-                  <div>
-                    <h3 className="text-lg font-semibold">Technical Skills</h3>
-                    <div className="flex flex-wrap gap-2 mt-2">
-                      {['JavaScript', 'TypeScript', 'React', 'Next.js', 'Node.js', 'Java', 'Spring Boot',
-                        'PostgreSQL', 'MySQL', 'MongoDB', 'Git', 'Docker', 'AWS'].map((skill) => (
-                        <span
-                          key={skill}
-                          className="px-3 py-1 bg-secondary text-secondary-foreground rounded-full text-sm"
-                        >
-                          {skill}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
+              <CardContent className="p-0">
+                <div className="w-full" style={{ height: '100vh' }}>
+                  <iframe
+                    src={resume.file_url}
+                    className="w-full h-full border-0"
+                    title="Resume PDF"
+                  />
                 </div>
               </CardContent>
             </Card>
