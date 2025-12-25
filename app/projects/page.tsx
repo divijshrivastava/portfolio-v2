@@ -1,8 +1,10 @@
 import Image from 'next/image';
+import Link from 'next/link';
 import { createClient } from '@/lib/supabase/server';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ExternalLink, Github, Youtube } from 'lucide-react';
+import { Github, Youtube } from 'lucide-react';
+import { getProjectImageUrl } from '@/lib/utils/youtube';
 
 export const revalidate = 3600;
 
@@ -25,12 +27,14 @@ export default async function ProjectsPage() {
 
         {projects && projects.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {projects.map((project) => (
+            {projects.map((project) => {
+              const displayImage = getProjectImageUrl(project.image_url, project.youtube_url);
+              return (
               <Card key={project.id} className="overflow-hidden hover:shadow-lg hover:border-primary/30 transition-all duration-300 group">
-                {project.image_url && (
+                {displayImage && (
                   <div className="relative h-48 w-full">
                     <Image
-                      src={project.image_url}
+                      src={displayImage}
                       alt={project.title}
                       fill
                       className="object-cover"
@@ -45,12 +49,15 @@ export default async function ProjectsPage() {
                 </CardHeader>
                 <CardContent>
                   <div className="flex flex-wrap gap-2">
-                    {project.project_url && (
-                      <Button asChild size="sm" variant="outline">
-                        <a href={project.project_url} target="_blank" rel="noopener noreferrer">
-                          <ExternalLink className="mr-2 h-4 w-4" />
-                          View
-                        </a>
+                    {project.slug ? (
+                      <Button asChild size="sm">
+                        <Link href={`/projects/${project.slug}`}>
+                          View Details
+                        </Link>
+                      </Button>
+                    ) : (
+                      <Button size="sm" disabled>
+                        View Details
                       </Button>
                     )}
                     {project.github_url && (
@@ -72,7 +79,8 @@ export default async function ProjectsPage() {
                   </div>
                 </CardContent>
               </Card>
-            ))}
+              );
+            })}
           </div>
         ) : (
           <Card>
