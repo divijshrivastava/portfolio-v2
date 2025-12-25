@@ -45,32 +45,31 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
 }
 
 export default async function BlogPost({ params }: { params: Promise<{ slug: string }> }) {
+  const { slug } = await params;
+  const supabase = await createClient();
+
+  const { data: blog, error } = await supabase
+    .from('blogs')
+    .select('*')
+    .eq('slug', slug)
+    .eq('status', 'published')
+    .single();
+
+  if (error || !blog) {
+    console.error('Blog fetch error:', error);
+    notFound();
+  }
+
+  // Increment view count (fire and forget)
   try {
-    const { slug } = await params;
-    const supabase = await createClient();
-
-    const { data: blog, error } = await supabase
+    await supabase
       .from('blogs')
-      .select('*')
-      .eq('slug', slug)
-      .eq('status', 'published')
-      .single();
-
-    if (error || !blog) {
-      console.error('Blog fetch error:', error);
-      notFound();
-    }
-
-    // Increment view count (fire and forget)
-    try {
-      await supabase
-        .from('blogs')
-        .update({ views: (blog.views || 0) + 1 })
-        .eq('id', blog.id);
-    } catch (viewError) {
-      // Don't fail the page if view count update fails
-      console.error('View count update failed:', viewError);
-    }
+      .update({ views: (blog.views || 0) + 1 })
+      .eq('id', blog.id);
+  } catch (viewError) {
+    // Don't fail the page if view count update fails
+    console.error('View count update failed:', viewError);
+  }
 
   return (
     <div className="min-h-screen">
@@ -121,8 +120,4 @@ export default async function BlogPost({ params }: { params: Promise<{ slug: str
       </article>
     </div>
   );
-  } catch (error) {
-    console.error('Blog page render error:', error);
-    notFound();
-  }
 }
