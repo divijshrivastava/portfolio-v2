@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { ArrowRight, Code, FileText, Briefcase, Layers, Zap, Database, Server, GitBranch, ExternalLink } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { HeroImage } from '@/components/hero-image';
 
 export default function Home() {
   return (
@@ -40,11 +41,7 @@ export default function Home() {
             </div>
           </div>
 
-          <div className="relative">
-            <div className="aspect-square relative rounded-2xl overflow-hidden bg-gradient-to-br from-primary/10 via-secondary/5 to-primary/5 flex items-center justify-center border-2 border-primary/20">
-              <div className="text-6xl sm:text-8xl font-bold bg-gradient-to-br from-primary to-secondary bg-clip-text text-transparent">DS</div>
-            </div>
-          </div>
+          <HeroImage />
         </div>
       </section>
 
