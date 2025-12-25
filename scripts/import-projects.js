@@ -81,33 +81,39 @@ async function importProjects() {
     let failed = 0;
 
     for (const project of projects) {
+      // Map MySQL PROJECT table to Supabase projects table
+      const title = project.HEADING || 'Untitled Project';
+
       // Skip if already exists
-      if (existingTitles.has(project.title)) {
-        console.log(`⊗ Skipped (exists): ${project.title}`);
+      if (existingTitles.has(title)) {
+        console.log(`⊗ Skipped (exists): ${title}`);
         skipped++;
         continue;
       }
 
-      // Generate unique slug
-      let slug = project.slug || generateSlug(project.title);
+      // Generate unique slug from HEADING
+      let slug = generateSlug(title);
       let slugCounter = 1;
       while (existingSlugs.has(slug)) {
-        slug = `${generateSlug(project.title)}-${slugCounter}`;
+        slug = `${generateSlug(title)}-${slugCounter}`;
         slugCounter++;
       }
       existingSlugs.add(slug);
 
+      // Map STATUS: LIVE -> published, anything else -> draft
+      const status = (project.STATUS === 'LIVE') ? 'published' : 'draft';
+
       // Prepare data for Supabase
       const supabaseProject = {
-        title: project.title,
+        title: title,
         slug: slug,
         description: project.description || '',
-        image_url: project.image_url || null,
-        project_url: project.project_url || null,
-        github_url: project.github_url || null,
-        youtube_url: project.youtube_url || null,
-        status: project.status === 'published' ? 'published' : 'draft',
-        created_at: project.created_at || new Date().toISOString(),
+        image_url: null, // Not available in MySQL PROJECT table
+        project_url: null, // Not available in MySQL PROJECT table
+        github_url: null, // Not available in MySQL PROJECT table
+        youtube_url: null, // Not available in MySQL PROJECT table
+        status: status,
+        created_at: project.PUBLISH_TIMESTAMP || project.INSERT_TIMESTAMP || new Date().toISOString(),
       };
 
       // Insert into Supabase

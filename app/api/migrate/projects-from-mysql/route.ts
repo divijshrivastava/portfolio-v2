@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server';
 import { NextResponse } from 'next/server';
+import mysql from 'mysql2/promise';
 
 function generateSlug(text: string): string {
   return text
@@ -27,19 +28,27 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
+  let mysqlConnection;
+
   try {
-    const body = await request.json();
-    const { projects } = body;
+    // Connect to MySQL
+    mysqlConnection = await mysql.createConnection({
+      host: process.env.MYSQL_HOST,
+      user: process.env.MYSQL_USER,
+      password: process.env.MYSQL_PASSWORD,
+      database: process.env.MYSQL_DATABASE,
+    });
 
-    if (!projects || !Array.isArray(projects)) {
-      return NextResponse.json({
-        error: 'Invalid request body. Expected { projects: [...] }'
-      }, { status: 400 });
-    }
+    // Fetch all projects from MySQL PROJECT table
+    const [rows] = await mysqlConnection.execute(
+      'SELECT * FROM PROJECT ORDER BY PUBLISH_TIMESTAMP DESC'
+    );
 
-    if (projects.length === 0) {
+    const mysqlProjects = rows as any[];
+
+    if (!mysqlProjects || mysqlProjects.length === 0) {
       return NextResponse.json({
-        message: 'No projects to migrate',
+        message: 'No projects found in MySQL',
         migrated: 0
       });
     }
@@ -56,7 +65,7 @@ export async function POST(request: Request) {
     let skipped = 0;
     const errors = [];
 
-    for (const project of projects) {
+    for (const project of mysqlProjects) {
       // Map MySQL PROJECT table to Supabase projects table
       const title = project.HEADING || 'Untitled Project';
 
@@ -108,7 +117,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json({
       message: 'Migration completed',
-      total: projects.length,
+      total: mysqlProjects.length,
       migrated,
       skipped,
       errors: errors.length > 0 ? errors : undefined
@@ -120,5 +129,9 @@ export async function POST(request: Request) {
       error: 'Migration failed',
       details: error.message
     }, { status: 500 });
+  } finally {
+    if (mysqlConnection) {
+      await mysqlConnection.end();
+    }
   }
 }

@@ -46,13 +46,13 @@ else
     exit 1
 fi
 
-# Check if projects table exists
-echo -n "Checking projects table... "
-if mysql -u"$MYSQL_USER" -p"$MYSQL_PASSWORD" "$MYSQL_DATABASE" -e "DESCRIBE projects" 2>/dev/null >/dev/null; then
-    PROJECT_COUNT=$(mysql -u"$MYSQL_USER" -p"$MYSQL_PASSWORD" "$MYSQL_DATABASE" -se "SELECT COUNT(*) FROM projects")
+# Check if PROJECT table exists
+echo -n "Checking PROJECT table... "
+if mysql -u"$MYSQL_USER" -p"$MYSQL_PASSWORD" "$MYSQL_DATABASE" -e "DESCRIBE PROJECT" 2>/dev/null >/dev/null; then
+    PROJECT_COUNT=$(mysql -u"$MYSQL_USER" -p"$MYSQL_PASSWORD" "$MYSQL_DATABASE" -se "SELECT COUNT(*) FROM PROJECT")
     echo -e "${GREEN}✓ Found $PROJECT_COUNT projects${NC}"
 else
-    echo -e "${RED}✗ projects table not found${NC}"
+    echo -e "${RED}✗ PROJECT table not found${NC}"
     exit 1
 fi
 
@@ -66,21 +66,19 @@ echo -n "Exporting projects to JSON... "
 mysql -u"$MYSQL_USER" -p"$MYSQL_PASSWORD" "$MYSQL_DATABASE" <<'EOF' --skip-column-names --raw > "$OUTPUT_DIR/projects.json"
 SELECT JSON_ARRAYAGG(
     JSON_OBJECT(
-        'id', id,
-        'title', title,
-        'slug', slug,
-        'description', description,
-        'image_url', image_url,
-        'project_url', project_url,
-        'github_url', github_url,
-        'youtube_url', youtube_url,
-        'status', status,
-        'created_at', created_at,
-        'updated_at', updated_at
+        'ID', ID,
+        'PROJECT_TYPE', PROJECT_TYPE,
+        'INSERT_TIMESTAMP', INSERT_TIMESTAMP,
+        'INSERTED_BY', INSERTED_BY,
+        'STATUS', STATUS,
+        'IS_ACTIVE', IS_ACTIVE,
+        'PUBLISH_TIMESTAMP', PUBLISH_TIMESTAMP,
+        'HEADING', HEADING,
+        'description', description
     )
 ) as json
-FROM projects
-ORDER BY created_at DESC;
+FROM PROJECT
+ORDER BY PUBLISH_TIMESTAMP DESC;
 EOF
 
 echo -e "${GREEN}✓ Done${NC}"
@@ -100,7 +98,7 @@ echo ""
 echo "Preview (latest project):"
 echo "---"
 mysql -u"$MYSQL_USER" -p"$MYSQL_PASSWORD" "$MYSQL_DATABASE" \
-    -e "SELECT title, status, created_at FROM projects ORDER BY created_at DESC LIMIT 1"
+    -e "SELECT HEADING, STATUS, PUBLISH_TIMESTAMP FROM PROJECT ORDER BY PUBLISH_TIMESTAMP DESC LIMIT 1"
 echo "---"
 echo ""
 
