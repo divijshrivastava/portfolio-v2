@@ -7,9 +7,9 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { createClient } from '@/lib/supabase/client';
 import { ArrowLeft, Save, Eye } from 'lucide-react';
 import Link from 'next/link';
+import { createClient } from '@/lib/supabase/client';
 
 export default function NewBlogPage() {
   const router = useRouter();
@@ -125,37 +125,49 @@ export default function NewBlogPage() {
 
     setIsSubmitting(true);
 
-    const supabase = createClient();
+    try {
+      const response = await fetch('/api/blogs/create', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          title,
+          slug,
+          summary,
+          content,
+          cover_image_url: coverImage,
+          thumbnail_url: coverImage,
+          status: newStatus,
+          read_time: calculateReadTime(content),
+          published_at: newStatus === 'published' ? new Date().toISOString() : null,
+        }),
+      });
 
-    const { error } = await supabase.from('blogs').insert({
-      title,
-      slug,
-      summary,
-      content,
-      cover_image_url: coverImage,
-      thumbnail_url: coverImage,
-      status: newStatus,
-      read_time: calculateReadTime(content),
-      published_at: newStatus === 'published' ? new Date().toISOString() : null,
-    });
+      const result = await response.json();
 
-    if (error) {
-      console.error('Error creating blog:', error);
-      
-      // Handle duplicate slug error specifically
-      if (error.code === '23505' && error.message.includes('slug')) {
-        setSlugError('This slug is already in use. Please choose a different one.');
-        alert('A blog post with this slug already exists. Please change the slug and try again.');
-      } else {
-        alert(`Error creating blog post: ${error.message}`);
+      if (!response.ok) {
+        console.error('Error creating blog:', result);
+
+        // Handle duplicate slug error specifically
+        if (result.error && result.error.includes('slug')) {
+          setSlugError('This slug is already in use. Please choose a different one.');
+          alert('A blog post with this slug already exists. Please change the slug and try again.');
+        } else {
+          alert(`Error creating blog post: ${result.error || 'Unknown error'}`);
+        }
+
+        setIsSubmitting(false);
+        return;
       }
-      
-      setIsSubmitting(false);
-      return;
-    }
 
-    router.push('/admin/blogs');
-    router.refresh();
+      router.push('/admin/blogs');
+      router.refresh();
+    } catch (error: any) {
+      console.error('Error creating blog:', error);
+      alert(`Error creating blog post: ${error.message}`);
+      setIsSubmitting(false);
+    }
   };
 
   return (

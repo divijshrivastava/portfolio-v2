@@ -153,45 +153,54 @@ export default function EditBlogPage({ params }: any) {
 
     setIsSubmitting(true);
 
-    const supabase = createClient();
+    try {
+      const updateData: any = {
+        title,
+        slug,
+        summary,
+        content,
+        cover_image_url: coverImage,
+        thumbnail_url: coverImage,
+        status: newStatus,
+        read_time: calculateReadTime(content),
+      };
 
-    const updateData: any = {
-      title,
-      slug,
-      summary,
-      content,
-      cover_image_url: coverImage,
-      thumbnail_url: coverImage,
-      status: newStatus,
-      read_time: calculateReadTime(content),
-    };
-
-    if (newStatus === 'published' && status === 'draft') {
-      updateData.published_at = new Date().toISOString();
-    }
-
-    const { error } = await supabase
-      .from('blogs')
-      .update(updateData)
-      .eq('id', id);
-
-    if (error) {
-      console.error('Error updating blog:', error);
-      
-      // Handle duplicate slug error specifically
-      if (error.code === '23505' && error.message.includes('slug')) {
-        setSlugError('This slug is already in use. Please choose a different one.');
-        alert('A blog post with this slug already exists. Please change the slug and try again.');
-      } else {
-        alert(`Error updating blog post: ${error.message}`);
+      if (newStatus === 'published' && status === 'draft') {
+        updateData.published_at = new Date().toISOString();
       }
-      
-      setIsSubmitting(false);
-      return;
-    }
 
-    router.push('/admin/blogs');
-    router.refresh();
+      const response = await fetch(`/api/blogs/${id}/update`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(updateData),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        console.error('Error updating blog:', result);
+
+        // Handle duplicate slug error specifically
+        if (result.error && result.error.includes('slug')) {
+          setSlugError('This slug is already in use. Please choose a different one.');
+          alert('A blog post with this slug already exists. Please change the slug and try again.');
+        } else {
+          alert(`Error updating blog post: ${result.error || 'Unknown error'}`);
+        }
+
+        setIsSubmitting(false);
+        return;
+      }
+
+      router.push('/admin/blogs');
+      router.refresh();
+    } catch (error: any) {
+      console.error('Error updating blog:', error);
+      alert(`Error updating blog post: ${error.message}`);
+      setIsSubmitting(false);
+    }
   };
 
   const handleDelete = async () => {
