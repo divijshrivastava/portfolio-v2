@@ -102,7 +102,7 @@ export default async function BlogPost({
                 <div className="flex items-center gap-2">
                   <div className="relative w-10 h-10 rounded-full overflow-hidden border-2 border-primary/20">
                     <Image
-                      src="/divij.jpg"
+                      src="/divij-avatar.jpg"
                       alt="Divij Shrivastava"
                       fill
                       className="object-cover"
