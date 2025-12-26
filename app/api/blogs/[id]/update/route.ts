@@ -8,7 +8,7 @@ export async function PUT(
   try {
     const resolvedParams = await Promise.resolve(params);
     const body = await request.json();
-    const supabase = await createAdminClient();
+    const supabase = createAdminClient();
 
     const { data, error } = await supabase
       .from('blogs')

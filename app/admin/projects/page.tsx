@@ -8,7 +8,7 @@ import { getProjectImageUrl } from '@/lib/utils/youtube';
 import { MigrateProjectsButton } from '@/components/admin/migrate-projects-button';
 
 export default async function ProjectsPage() {
-  const supabase = await createAdminClient();
+  const supabase = createAdminClient();
 
   const { data: projects } = await supabase
     .from('projects')

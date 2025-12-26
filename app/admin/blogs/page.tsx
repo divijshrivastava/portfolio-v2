@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Plus, Edit, Trash2, Eye } from 'lucide-react';
 
 export default async function BlogsPage() {
-  const supabase = await createAdminClient();
+  const supabase = createAdminClient();
 
   const { data: blogs } = await supabase
     .from('blogs')

@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { FileText, Briefcase, Mail, Activity } from 'lucide-react';
 
 export default async function AdminDashboard() {
-  const supabase = await createAdminClient();
+  const supabase = createAdminClient();
 
   const [
     { count: blogsCount },

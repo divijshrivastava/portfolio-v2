@@ -4,7 +4,7 @@ import { createAdminClient } from '@/lib/supabase/admin';
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const supabase = await createAdminClient();
+    const supabase = createAdminClient();
 
     const { data, error } = await supabase
       .from('blogs')
