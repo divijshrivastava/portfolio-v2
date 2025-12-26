@@ -3,10 +3,10 @@ import { createAdminClient } from '@/lib/supabase/admin';
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const resolvedParams = await Promise.resolve(params);
+    const resolvedParams = await params;
     const body = await request.json();
     const supabase = createAdminClient();
 
