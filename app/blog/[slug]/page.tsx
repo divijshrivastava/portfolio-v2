@@ -83,36 +83,67 @@ export default async function BlogPost({
 
     return (
       <div className="min-h-screen">
-        <article className="container mx-auto px-4 sm:px-6 lg:px-8 py-12">
-          <div className="max-w-4xl mx-auto">
-            <Button asChild variant="ghost" className="mb-8">
-              <Link href="/blog">
-                <ArrowLeft className="mr-2 h-4 w-4" />
-                Back to Blog
-              </Link>
-            </Button>
+        {/* Hero Section */}
+        <div className="bg-gradient-to-br from-primary/10 via-background to-secondary/10 py-16 sm:py-24">
+          <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="max-w-4xl mx-auto text-center">
+              <Button asChild variant="ghost" className="mb-8">
+                <Link href="/blog">
+                  <ArrowLeft className="mr-2 h-4 w-4" />
+                  Back to Blog
+                </Link>
+              </Button>
 
-            <h1 className="text-4xl sm:text-5xl font-bold mb-6">{blog.title}</h1>
+              <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold mb-8">
+                {blog.title}
+              </h1>
 
-            <div className="flex flex-wrap gap-4 text-muted-foreground mb-8">
-              <div className="flex items-center gap-1">
-                <Calendar className="h-4 w-4" />
-                {new Date(blog.created_at).toLocaleDateString('en-US', {
-                  year: 'numeric',
-                  month: 'long',
-                  day: 'numeric',
-                })}
-              </div>
-              {blog.read_time && (
-                <div className="flex items-center gap-1">
-                  <Clock className="h-4 w-4" />
-                  {blog.read_time} min read
+              <div className="flex flex-wrap items-center justify-center gap-4 text-muted-foreground mb-8">
+                <div className="flex items-center gap-2">
+                  <div className="relative w-10 h-10 rounded-full overflow-hidden border-2 border-primary/20">
+                    <Image
+                      src="/divij.jpg"
+                      alt="Divij Shrivastava"
+                      fill
+                      className="object-cover"
+                    />
+                  </div>
+                  <span className="font-medium text-foreground">Divij Shrivastava</span>
                 </div>
+                <span>•</span>
+                <div className="flex items-center gap-1">
+                  <Calendar className="h-4 w-4" />
+                  {new Date(blog.created_at).toLocaleDateString('en-US', {
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric',
+                  })}
+                </div>
+                {blog.read_time && (
+                  <>
+                    <span>•</span>
+                    <div className="flex items-center gap-1">
+                      <Clock className="h-4 w-4" />
+                      {blog.read_time} min read
+                    </div>
+                  </>
+                )}
+              </div>
+
+              {blog.summary && (
+                <p className="text-lg sm:text-xl text-muted-foreground italic max-w-3xl mx-auto mb-12">
+                  {blog.summary}
+                </p>
               )}
             </div>
+          </div>
+        </div>
 
-            {blog.cover_image_url && (
-              <div className="relative w-full h-64 sm:h-96 mb-8 rounded-lg overflow-hidden">
+        {/* Cover Image */}
+        {blog.cover_image_url && (
+          <div className="container mx-auto px-4 sm:px-6 lg:px-8 -mt-8 sm:-mt-12">
+            <div className="max-w-5xl mx-auto">
+              <div className="relative w-full h-64 sm:h-96 lg:h-[500px] rounded-lg overflow-hidden shadow-2xl">
                 <Image
                   src={blog.cover_image_url}
                   alt={blog.title}
@@ -120,8 +151,13 @@ export default async function BlogPost({
                   className="object-cover"
                 />
               </div>
-            )}
+            </div>
+          </div>
+        )}
 
+        {/* Article Content */}
+        <article className="container mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16">
+          <div className="max-w-4xl mx-auto">
             <div
               className="prose prose-lg dark:prose-invert max-w-none"
               dangerouslySetInnerHTML={{ __html: blog.content }}

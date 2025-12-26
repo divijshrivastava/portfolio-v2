@@ -1,16 +1,49 @@
+'use client';
+
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { createAdminClient } from '@/lib/supabase/admin';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Plus, Edit, Trash2, Eye } from 'lucide-react';
 
-export default async function BlogsPage() {
-  const supabase = createAdminClient();
+export default function BlogsPage() {
+  const [blogs, setBlogs] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const { data: blogs } = await supabase
-    .from('blogs')
-    .select('*')
-    .order('created_at', { ascending: false });
+  useEffect(() => {
+    loadBlogs();
+  }, []);
+
+  const loadBlogs = async () => {
+    const response = await fetch('/api/admin/blogs');
+    const data = await response.json();
+    setBlogs(data.blogs || []);
+    setLoading(false);
+  };
+
+  const handleDelete = async (blogId: string, blogTitle: string) => {
+    if (!confirm(`Are you sure you want to delete "${blogTitle}"?\n\nThis action cannot be undone.`)) {
+      return;
+    }
+
+    const response = await fetch(`/api/blogs/${blogId}/delete`, {
+      method: 'POST',
+    });
+
+    if (response.ok) {
+      loadBlogs();
+    } else {
+      alert('Failed to delete blog post');
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <p className="text-muted-foreground">Loading blogs...</p>
+      </div>
+    );
+  }
 
   return (
     <div>
@@ -55,11 +88,13 @@ export default async function BlogsPage() {
                         <Edit className="h-4 w-4" />
                       </Link>
                     </Button>
-                    <form action={`/api/blogs/${blog.id}/delete`} method="POST">
-                      <Button type="submit" variant="ghost" size="sm">
-                        <Trash2 className="h-4 w-4 text-destructive" />
-                      </Button>
-                    </form>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleDelete(blog.id, blog.title)}
+                    >
+                      <Trash2 className="h-4 w-4 text-destructive" />
+                    </Button>
                   </div>
                 </div>
               </CardHeader>

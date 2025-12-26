@@ -1,21 +1,53 @@
+'use client';
+
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { createAdminClient } from '@/lib/supabase/admin';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Plus, Edit, Trash2, Eye, ExternalLink, Github, Youtube } from 'lucide-react';
 import { getProjectImageUrl } from '@/lib/utils/youtube';
 import { MigrateProjectsButton } from '@/components/admin/migrate-projects-button';
 
-export default async function ProjectsPage() {
-  const supabase = createAdminClient();
+export default function ProjectsPage() {
+  const [projects, setProjects] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const { data: projects } = await supabase
-    .from('projects')
-    .select('*')
-    .order('created_at', { ascending: false });
+  useEffect(() => {
+    loadProjects();
+  }, []);
 
-  // Check if any projects are missing slugs
+  const loadProjects = async () => {
+    const response = await fetch('/api/admin/projects');
+    const data = await response.json();
+    setProjects(data.projects || []);
+    setLoading(false);
+  };
+
+  const handleDelete = async (projectId: string, projectTitle: string) => {
+    if (!confirm(`Are you sure you want to delete "${projectTitle}"?\n\nThis action cannot be undone.`)) {
+      return;
+    }
+
+    const response = await fetch(`/api/projects/${projectId}/delete`, {
+      method: 'POST',
+    });
+
+    if (response.ok) {
+      loadProjects();
+    } else {
+      alert('Failed to delete project');
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <p className="text-muted-foreground">Loading projects...</p>
+      </div>
+    );
+  }
+
   const projectsNeedingMigration = projects?.filter(p => !p.slug).length || 0;
 
   return (
@@ -129,11 +161,13 @@ export default async function ProjectsPage() {
                             <Edit className="h-4 w-4" />
                           </Link>
                         </Button>
-                        <form action={`/api/projects/${project.id}/delete`} method="POST">
-                          <Button type="submit" variant="ghost" size="sm">
-                            <Trash2 className="h-4 w-4 text-destructive" />
-                          </Button>
-                        </form>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleDelete(project.id, project.title)}
+                        >
+                          <Trash2 className="h-4 w-4 text-destructive" />
+                        </Button>
                       </div>
                     </div>
                   </div>

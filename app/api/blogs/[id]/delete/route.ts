@@ -1,34 +1,27 @@
-import { createClient } from '@/lib/supabase/server';
-import { redirect } from 'next/navigation';
+import { NextRequest, NextResponse } from 'next/server';
+import { createAdminClient } from '@/lib/supabase/admin';
 
 export async function POST(
-  request: Request,
+  request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const { id } = await params;
-  const supabase = await createClient();
+  try {
+    const { id } = await params;
+    const supabase = createAdminClient();
 
-  // Verify user is admin
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) {
-    redirect('/login');
+    const { error } = await supabase
+      .from('blogs')
+      .delete()
+      .eq('id', id);
+
+    if (error) {
+      console.error('Error deleting blog:', error);
+      return NextResponse.json({ error: error.message }, { status: 400 });
+    }
+
+    return NextResponse.json({ success: true }, { status: 200 });
+  } catch (error: any) {
+    console.error('Exception in delete blog API:', error);
+    return NextResponse.json({ error: error.message || 'Internal server error' }, { status: 500 });
   }
-
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('is_admin')
-    .eq('id', user.id)
-    .single();
-
-  if (!profile?.is_admin) {
-    redirect('/login');
-  }
-
-  // Delete the blog
-  await supabase
-    .from('blogs')
-    .delete()
-    .eq('id', id);
-
-  redirect('/admin/blogs');
 }
