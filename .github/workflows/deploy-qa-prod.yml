@@ -1,7 +1,10 @@
 name: Deploy QA and Production
 
 on:
-  push:
+  workflow_run:
+    workflows: ["CI Pipeline"]
+    types:
+      - completed
     branches: [main]
 
 # Cancel in-progress runs when a new workflow with the same group name is triggered
@@ -13,26 +16,25 @@ env:
   NODE_VERSION: '22.x'
 
 jobs:
-  # Wait for CI tests to complete before proceeding
-  wait-for-ci:
-    name: Wait for CI Tests
+  # Check that CI tests passed before proceeding
+  check-ci-success:
+    name: Check CI Success
     runs-on: ubuntu-latest
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
 
     steps:
-      - name: Wait for CI Pipeline
+      - name: CI Pipeline Passed
         run: |
-          echo "✅ CI tests must pass before deployment"
-          echo "This job ensures CI workflow completes successfully"
-
-    # This job depends on the ci-status job from ci.yml
-    # If CI fails, this workflow will not proceed
-    needs: []
+          echo "✅ CI pipeline completed successfully"
+          echo "Proceeding with deployment workflow"
+          echo "CI workflow: ${{ github.event.workflow_run.name }}"
+          echo "CI conclusion: ${{ github.event.workflow_run.conclusion }}"
 
   # QA deployment happens automatically via Vercel
   qa-deployment:
     name: QA Deployment
     runs-on: ubuntu-latest
-    needs: wait-for-ci
+    needs: check-ci-success
 
     steps:
       - name: QA Deployment Notice

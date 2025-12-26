@@ -1,4 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
+import { NextRequest } from 'next/server'
 import { POST } from '@/app/api/blogs/create/route'
 import { createAdminClient } from '@/lib/supabase/admin'
 
@@ -31,7 +32,7 @@ describe('POST /api/blogs/create', () => {
 
     vi.mocked(createAdminClient).mockReturnValue(mockSupabase as any)
 
-    const request = new Request('http://localhost:3000/api/blogs/create', {
+    const request = new NextRequest('http://localhost:3000/api/blogs/create', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -68,7 +69,7 @@ describe('POST /api/blogs/create', () => {
 
     vi.mocked(createAdminClient).mockReturnValue(mockSupabase as any)
 
-    const request = new Request('http://localhost:3000/api/blogs/create', {
+    const request = new NextRequest('http://localhost:3000/api/blogs/create', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -92,7 +93,7 @@ describe('POST /api/blogs/create', () => {
       throw new Error('Database connection failed')
     })
 
-    const request = new Request('http://localhost:3000/api/blogs/create', {
+    const request = new NextRequest('http://localhost:3000/api/blogs/create', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

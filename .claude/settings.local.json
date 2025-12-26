@@ -24,7 +24,21 @@
       "Bash(npm install:*)",
       "Bash(grep:*)",
       "WebFetch(domain:portfolio-v2-77bxrnwbc-divijshrivastavas-projects.vercel.app)",
-      "Bash(xargs:*)"
+      "Bash(xargs:*)",
+      "Bash(npm run dev:*)",
+      "Bash(find:*)",
+      "Bash(git checkout:*)",
+      "Bash(test:*)",
+      "Bash(npm run test:unit:*)",
+      "Bash(npx playwright install)",
+      "Bash(npm run test:e2e:*)",
+      "Bash(gh:*)",
+      "Bash(vercel --version:*)",
+      "WebSearch",
+      "Bash(vercel ls:*)",
+      "Bash(vercel logs:*)",
+      "Bash(vercel inspect:*)",
+      "Bash(npm run type-check:*)"
     ]
   }
 }
