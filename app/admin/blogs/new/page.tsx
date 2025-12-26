@@ -106,6 +106,11 @@ export default function NewBlogPage() {
   };
 
   const handleSubmit = async (newStatus: 'draft' | 'published') => {
+    if (!title || !slug || !content) {
+      alert('Please fill in required fields (Title, Slug, and Content)');
+      return;
+    }
+
     if (slugError) {
       alert('Please fix the slug error before submitting.');
       return;
@@ -257,14 +262,14 @@ export default function NewBlogPage() {
           <Button
             variant="outline"
             onClick={() => handleSubmit('draft')}
-            disabled={isSubmitting || !title || !slug}
+            disabled={isSubmitting || !title || !slug || !content}
           >
             <Save className="mr-2 h-4 w-4" />
             Save as Draft
           </Button>
           <Button
             onClick={() => handleSubmit('published')}
-            disabled={isSubmitting || !title || !slug}
+            disabled={isSubmitting || !title || !slug || !content}
           >
             <Eye className="mr-2 h-4 w-4" />
             Publish
