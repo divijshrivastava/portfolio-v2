@@ -4,6 +4,8 @@ import { createAdminClient } from '@/lib/supabase/admin';
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
+    console.log('Creating blog with data:', { ...body, content: '...(truncated)' });
+
     const supabase = createAdminClient();
 
     const { data, error } = await supabase
@@ -13,13 +15,20 @@ export async function POST(request: NextRequest) {
       .single();
 
     if (error) {
-      console.error('Error creating blog:', error);
-      return NextResponse.json({ error: error.message }, { status: 400 });
+      console.error('Supabase error creating blog:', error);
+      return NextResponse.json({
+        error: error.message || 'Failed to create blog',
+        details: error
+      }, { status: 400 });
     }
 
+    console.log('Blog created successfully:', data?.id);
     return NextResponse.json({ data }, { status: 201 });
   } catch (error: any) {
-    console.error('Error in create blog API:', error);
-    return NextResponse.json({ error: error.message || 'Internal server error' }, { status: 500 });
+    console.error('Exception in create blog API:', error);
+    return NextResponse.json({
+      error: error.message || 'Internal server error',
+      details: error.toString()
+    }, { status: 500 });
   }
 }

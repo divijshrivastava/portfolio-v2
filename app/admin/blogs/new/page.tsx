@@ -148,13 +148,16 @@ export default function NewBlogPage() {
 
       if (!response.ok) {
         console.error('Error creating blog:', result);
+        console.error('Full response:', { status: response.status, result });
+
+        const errorMessage = result.error || result.details || 'Unknown error';
 
         // Handle duplicate slug error specifically
-        if (result.error && result.error.includes('slug')) {
+        if (errorMessage.includes('slug')) {
           setSlugError('This slug is already in use. Please choose a different one.');
           alert('A blog post with this slug already exists. Please change the slug and try again.');
         } else {
-          alert(`Error creating blog post: ${result.error || 'Unknown error'}`);
+          alert(`Error creating blog post: ${errorMessage}`);
         }
 
         setIsSubmitting(false);
