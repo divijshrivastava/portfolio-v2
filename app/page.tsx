@@ -3,8 +3,21 @@ import { ArrowRight, Code, FileText, Briefcase, Layers, Zap, Database, Server, G
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { HeroImage } from '@/components/hero-image';
+import { createClient } from '@/lib/supabase/server';
 
-export default function Home() {
+export const revalidate = 3600;
+
+export default async function Home() {
+  const supabase = await createClient();
+
+  // Fetch featured projects
+  const { data: featuredProjects } = await supabase
+    .from('projects')
+    .select('*')
+    .eq('status', 'published')
+    .eq('featured', true)
+    .order('start_date', { ascending: false })
+    .limit(4);
   return (
     <div className="min-h-screen">
       {/* Hero Section */}
@@ -20,14 +33,14 @@ export default function Home() {
               </p>
             </div>
             <p className="text-lg text-muted-foreground">
-              I architect and build high-performance web applications that solve complex business problems, with a focus on fintech and enterprise systems.
+              Specializing in fintech and enterprise systems at Morgan Stanley, TIAA, and TCS. Built real-time trading platforms, ESG analytics tools, and scalable microservices handling millions of transactions. Award-winning engineer with proven leadership in high-impact projects.
             </p>
             <div className="flex flex-wrap items-center gap-2 text-sm sm:text-base">
               <span className="text-muted-foreground">Tech Stack:</span>
-              <span className="font-medium">Java • Angular • Python • MySQL • Snowflake • MongoDB • Kafka</span>
+              <span className="font-medium">Java • Spring Boot • Angular • Python • Elasticsearch • Kafka • DB2 • MongoDB</span>
             </div>
             <p className="text-sm text-muted-foreground">
-              8+ years of experience building production systems
+              8+ years • Tech Showcase Winner • On the Spot Award • Morgan Stanley • TIAA • TCS
             </p>
             <div className="flex flex-wrap gap-4">
               <Button asChild size="lg">
@@ -50,16 +63,16 @@ export default function Home() {
         <div className="max-w-4xl mx-auto mb-12 text-center">
           <h2 className="text-3xl sm:text-4xl font-bold mb-4 text-primary">What I Do</h2>
           <p className="text-lg text-muted-foreground">
-            I specialize in building end-to-end solutions that scale, from frontend architecture to backend infrastructure.
+            Full-stack engineer with expertise in fintech systems, from real-time trading platforms to ESG analytics, built for enterprise scale.
           </p>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl mx-auto">
           <Card className="hover:shadow-lg hover:border-primary/30 transition-all duration-300 group">
             <CardHeader>
               <Layers className="h-10 w-10 mb-4 text-primary group-hover:text-secondary transition-colors duration-300" />
-              <CardTitle className="text-primary">Frontend Architecture</CardTitle>
+              <CardTitle className="text-primary">Frontend Development</CardTitle>
               <CardDescription>
-                Design and implement scalable React/Angular applications with focus on performance, accessibility, and maintainability.
+                Build enterprise Angular applications for trading platforms, ESG analytics dashboards, and e-commerce insurance flows. Design responsive UX for portfolio managers and financial analysts with real-time data visualization.
               </CardDescription>
             </CardHeader>
           </Card>
@@ -69,7 +82,7 @@ export default function Home() {
               <Server className="h-10 w-10 mb-4 text-primary group-hover:text-secondary transition-colors duration-300" />
               <CardTitle className="text-primary">Backend APIs & Services</CardTitle>
               <CardDescription>
-                Build robust RESTful and event-driven APIs using Java, Python, and Node.js, handling high-throughput workloads.
+                Build RESTful APIs with Spring Boot and Python for trading platforms, document storage, and ESG analytics. Design Swagger documentation for multi-client API integrations. Handle high-throughput real-time workloads.
               </CardDescription>
             </CardHeader>
           </Card>
@@ -77,9 +90,9 @@ export default function Home() {
           <Card className="hover:shadow-lg hover:border-primary/30 transition-all duration-300 group">
             <CardHeader>
               <GitBranch className="h-10 w-10 mb-4 text-primary group-hover:text-secondary transition-colors duration-300" />
-              <CardTitle className="text-primary">System Design & Architecture</CardTitle>
+              <CardTitle className="text-primary">System Integration & Architecture</CardTitle>
               <CardDescription>
-                Design distributed systems, microservices architectures, and data pipelines that handle millions of transactions.
+                Architect real-time trading systems integrating 9 downstream platforms including Aladdin. Build event-driven architectures with Kafka. Design middleware for LaunchDarkly, Verity RMS, and third-party tool integrations.
               </CardDescription>
             </CardHeader>
           </Card>
@@ -87,9 +100,9 @@ export default function Home() {
           <Card className="hover:shadow-lg hover:border-primary/30 transition-all duration-300 group">
             <CardHeader>
               <Zap className="h-10 w-10 mb-4 text-primary group-hover:text-secondary transition-colors duration-300" />
-              <CardTitle className="text-primary">Performance Optimization</CardTitle>
+              <CardTitle className="text-primary">Data Engineering & Search</CardTitle>
               <CardDescription>
-                Identify bottlenecks, optimize database queries, implement caching strategies, and reduce latency across the stack.
+                Migrate millions of records across databases (RDBMS to MongoDB, MySQL to DB2). Implement Elasticsearch for high-performance search. Built automated data pipelines with Python and Autosys.
               </CardDescription>
             </CardHeader>
           </Card>
@@ -99,7 +112,7 @@ export default function Home() {
               <Database className="h-10 w-10 mb-4 text-primary group-hover:text-secondary transition-colors duration-300" />
               <CardTitle className="text-primary">DevOps & Infrastructure</CardTitle>
               <CardDescription>
-                Set up CI/CD pipelines, containerize applications, and manage cloud infrastructure for reliable deployments.
+                Deploy dockerized microservices on OpenShift. Build CI/CD pipelines with Jenkins and ElectricFlow. Develop middleware for feature toggles, observability, and security standardization.
               </CardDescription>
             </CardHeader>
           </Card>
@@ -112,101 +125,54 @@ export default function Home() {
           <div className="mb-12 text-center">
             <h2 className="text-3xl sm:text-4xl font-bold mb-4 text-primary">Featured Projects</h2>
             <p className="text-lg text-muted-foreground">
-              A selection of projects showcasing system design, performance optimization, and full-stack development.
+              Production systems built at Morgan Stanley, TIAA, and TCS—from trading platforms to ESG analytics and enterprise storage solutions.
             </p>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <Card className="hover:shadow-lg hover:border-primary/30 transition-all duration-300">
-              <CardHeader>
-                <CardTitle className="text-primary">Payment Processing System</CardTitle>
-                <CardDescription>
-                  Built a high-throughput payment processing system that handles 10M+ transactions monthly with sub-100ms latency.
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="flex flex-wrap gap-2 mb-4">
-                  <span className="px-2 py-1 text-xs font-medium bg-primary/10 text-primary rounded">Java</span>
-                  <span className="px-2 py-1 text-xs font-medium bg-primary/10 text-primary rounded">Spring Boot</span>
-                  <span className="px-2 py-1 text-xs font-medium bg-primary/10 text-primary rounded">Kafka</span>
-                  <span className="px-2 py-1 text-xs font-medium bg-primary/10 text-primary rounded">MySQL</span>
-                  <span className="px-2 py-1 text-xs font-medium bg-primary/10 text-primary rounded">Redis</span>
-                </div>
-                <p className="text-sm text-muted-foreground">
-                  Reduced processing time by 60% and improved system reliability to 99.9% uptime.
+          {featuredProjects && featuredProjects.length > 0 ? (
+            <>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {featuredProjects.map((project) => (
+                  <Card key={project.id} className="hover:shadow-lg hover:border-primary/30 transition-all duration-300">
+                    <CardHeader>
+                      <CardTitle className="text-primary">{project.title}</CardTitle>
+                      <CardDescription>{project.description}</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      {project.tech_stack && project.tech_stack.length > 0 && (
+                        <div className="flex flex-wrap gap-2 mb-4">
+                          {project.tech_stack.map((tech: string, index: number) => (
+                            <span key={index} className="px-2 py-1 text-xs font-medium bg-primary/10 text-primary rounded">
+                              {tech}
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                      {project.featured_description && (
+                        <p className="text-sm text-muted-foreground">
+                          {project.featured_description}
+                        </p>
+                      )}
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+              <div className="text-center mt-8">
+                <Button asChild variant="outline" size="lg">
+                  <Link href="/projects">
+                    View All Projects <ArrowRight className="ml-2 h-4 w-4" />
+                  </Link>
+                </Button>
+              </div>
+            </>
+          ) : (
+            <Card>
+              <CardContent className="p-12 text-center">
+                <p className="text-muted-foreground">
+                  No featured projects yet. Mark projects as featured in the admin panel to display them here.
                 </p>
               </CardContent>
             </Card>
-
-            <Card className="hover:shadow-lg hover:border-primary/30 transition-all duration-300">
-              <CardHeader>
-                <CardTitle className="text-primary">Real-time Analytics Dashboard</CardTitle>
-                <CardDescription>
-                  Developed a real-time analytics platform for financial data using event streaming and data warehousing.
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="flex flex-wrap gap-2 mb-4">
-                  <span className="px-2 py-1 text-xs font-medium bg-primary/10 text-primary rounded">Angular</span>
-                  <span className="px-2 py-1 text-xs font-medium bg-primary/10 text-primary rounded">Python</span>
-                  <span className="px-2 py-1 text-xs font-medium bg-primary/10 text-primary rounded">Snowflake</span>
-                  <span className="px-2 py-1 text-xs font-medium bg-primary/10 text-primary rounded">Kafka</span>
-                  <span className="px-2 py-1 text-xs font-medium bg-primary/10 text-primary rounded">MongoDB</span>
-                </div>
-                <p className="text-sm text-muted-foreground">
-                  Enabled real-time decision-making for 500+ concurrent users with sub-second query performance.
-                </p>
-              </CardContent>
-            </Card>
-
-            <Card className="hover:shadow-lg hover:border-primary/30 transition-all duration-300">
-              <CardHeader>
-                <CardTitle className="text-primary">Microservices Migration</CardTitle>
-                <CardDescription>
-                  Architected and executed migration of monolithic application to microservices, improving scalability and deployment velocity.
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="flex flex-wrap gap-2 mb-4">
-                  <span className="px-2 py-1 text-xs font-medium bg-primary/10 text-primary rounded">Java</span>
-                  <span className="px-2 py-1 text-xs font-medium bg-primary/10 text-primary rounded">Docker</span>
-                  <span className="px-2 py-1 text-xs font-medium bg-primary/10 text-primary rounded">Kubernetes</span>
-                  <span className="px-2 py-1 text-xs font-medium bg-primary/10 text-primary rounded">MySQL</span>
-                  <span className="px-2 py-1 text-xs font-medium bg-primary/10 text-primary rounded">Kafka</span>
-                </div>
-                <p className="text-sm text-muted-foreground">
-                  Reduced deployment time by 80% and enabled independent scaling of services.
-                </p>
-              </CardContent>
-            </Card>
-
-            <Card className="hover:shadow-lg hover:border-primary/30 transition-all duration-300">
-              <CardHeader>
-                <CardTitle className="text-primary">E-commerce Platform</CardTitle>
-                <CardDescription>
-                  Designed and built a full-stack e-commerce platform with inventory management, payment integration, and order processing.
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="flex flex-wrap gap-2 mb-4">
-                  <span className="px-2 py-1 text-xs font-medium bg-primary/10 text-primary rounded">React</span>
-                  <span className="px-2 py-1 text-xs font-medium bg-primary/10 text-primary rounded">Node.js</span>
-                  <span className="px-2 py-1 text-xs font-medium bg-primary/10 text-primary rounded">MongoDB</span>
-                  <span className="px-2 py-1 text-xs font-medium bg-primary/10 text-primary rounded">Stripe API</span>
-                  <span className="px-2 py-1 text-xs font-medium bg-primary/10 text-primary rounded">AWS</span>
-                </div>
-                <p className="text-sm text-muted-foreground">
-                  Served 50K+ users with 99.5% uptime and processed $2M+ in transactions.
-                </p>
-              </CardContent>
-            </Card>
-          </div>
-          <div className="text-center mt-8">
-            <Button asChild variant="outline" size="lg">
-              <Link href="/projects">
-                View All Projects <ArrowRight className="ml-2 h-4 w-4" />
-              </Link>
-            </Button>
-          </div>
+          )}
         </div>
       </section>
 
@@ -218,7 +184,7 @@ export default function Home() {
               Let's Work Together
             </h2>
             <p className="text-lg text-muted-foreground mb-6 max-w-2xl mx-auto">
-              Interested in collaborating on a project, discussing a role, or exploring technical consulting? I'd love to hear from you.
+              Open to senior engineering roles in fintech, system architecture consulting, or collaborating on challenging technical problems. Let's connect.
             </p>
             <Button asChild size="lg">
               <Link href="/contact">

@@ -1,8 +1,9 @@
 import { notFound } from 'next/navigation';
 import Image from 'next/image';
 import { createClient } from '@/lib/supabase/server';
-import { Calendar, ArrowLeft, ExternalLink, Github, Youtube } from 'lucide-react';
+import { Calendar, ArrowLeft, ExternalLink, Github, Youtube, Briefcase, CalendarDays } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import Link from 'next/link';
 import { getProjectImageUrl } from '@/lib/utils/youtube';
 
@@ -62,6 +63,15 @@ export default async function ProjectDetail({
   }
 
   const displayImage = getProjectImageUrl(project.image_url, project.youtube_url);
+  const isProfessional = project.project_type === 'professional';
+
+  // Format date range for professional projects
+  const getDateRange = () => {
+    if (!isProfessional || !project.start_date) return null;
+    const startDate = new Date(project.start_date);
+    const endDate = project.end_date ? new Date(project.end_date) : null;
+    return `${startDate.getFullYear()} - ${endDate ? endDate.getFullYear() : 'Present'}`;
+  };
 
   return (
     <div className="min-h-screen">
@@ -74,18 +84,60 @@ export default async function ProjectDetail({
             </Link>
           </Button>
 
+          {/* Project Type Badge */}
+          {isProfessional && (
+            <div className="mb-4">
+              <Badge variant="secondary" className="text-sm">
+                <Briefcase className="mr-1 h-3 w-3" />
+                Professional Work Experience
+              </Badge>
+            </div>
+          )}
+
           <h1 className="text-4xl sm:text-5xl font-bold mb-6">{project.title}</h1>
 
-          <div className="flex flex-wrap gap-4 text-muted-foreground mb-8">
-            <div className="flex items-center gap-1">
-              <Calendar className="h-4 w-4" />
-              {new Date(project.created_at).toLocaleDateString('en-US', {
-                year: 'numeric',
-                month: 'long',
-                day: 'numeric',
-              })}
+          {/* Professional Project Metadata */}
+          {isProfessional && (
+            <div className="flex flex-wrap gap-4 text-muted-foreground mb-6">
+              {project.company && (
+                <div className="flex items-center gap-2">
+                  <Briefcase className="h-4 w-4" />
+                  <span className="font-semibold">{project.company}</span>
+                </div>
+              )}
+              {getDateRange() && (
+                <div className="flex items-center gap-2">
+                  <CalendarDays className="h-4 w-4" />
+                  <span>{getDateRange()}</span>
+                </div>
+              )}
             </div>
-          </div>
+          )}
+
+          {/* Tech Stack for Professional Projects */}
+          {isProfessional && project.tech_stack && project.tech_stack.length > 0 && (
+            <div className="flex flex-wrap gap-2 mb-8">
+              {project.tech_stack.map((tech: string, index: number) => (
+                <Badge key={index} variant="outline" className="text-sm">
+                  {tech}
+                </Badge>
+              ))}
+            </div>
+          )}
+
+          {/* Side Project Metadata */}
+          {!isProfessional && (
+            <div className="flex flex-wrap gap-4 text-muted-foreground mb-8">
+              <div className="flex items-center gap-1">
+                <Calendar className="h-4 w-4" />
+                {new Date(project.created_at).toLocaleDateString('en-US', {
+                  year: 'numeric',
+                  month: 'long',
+                  day: 'numeric',
+                })}
+              </div>
+            </div>
+          )}
 
           {displayImage && (
             <div className="relative w-full h-64 sm:h-96 mb-8 rounded-lg overflow-hidden">
@@ -99,9 +151,17 @@ export default async function ProjectDetail({
             </div>
           )}
 
+          {/* Short Description */}
           <div className="prose prose-lg dark:prose-invert max-w-none mb-8">
-            <p className="text-lg leading-relaxed">{project.description}</p>
+            <p className="text-lg leading-relaxed text-muted-foreground">{project.description}</p>
           </div>
+
+          {/* Detailed Content (primarily for professional projects) */}
+          {project.detailed_content && (
+            <div className="prose prose-lg dark:prose-invert max-w-none mb-8 border-t pt-8">
+              <div className="whitespace-pre-wrap">{project.detailed_content}</div>
+            </div>
+          )}
 
           <div className="flex flex-wrap gap-4 pt-6 border-t">
             {project.project_url && (

@@ -25,6 +25,16 @@ export default function EditProjectPage({ params }: any) {
   const [isLoading, setIsLoading] = useState(true);
   const [slugError, setSlugError] = useState('');
 
+  // Professional project fields
+  const [projectType, setProjectType] = useState<'professional' | 'side'>('side');
+  const [company, setCompany] = useState('');
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
+  const [techStack, setTechStack] = useState('');
+  const [detailedContent, setDetailedContent] = useState('');
+  const [featured, setFeatured] = useState(false);
+  const [featuredDescription, setFeaturedDescription] = useState('');
+
   useEffect(() => {
     Promise.resolve(params).then(resolvedParams => {
       setId(resolvedParams.id);
@@ -54,6 +64,17 @@ export default function EditProjectPage({ params }: any) {
     setGithubUrl(project.github_url || '');
     setYoutubeUrl(project.youtube_url || '');
     setStatus(project.status);
+
+    // Load professional project fields
+    setProjectType(project.project_type || 'side');
+    setCompany(project.company || '');
+    setStartDate(project.start_date || '');
+    setEndDate(project.end_date || '');
+    setTechStack(project.tech_stack ? project.tech_stack.join(', ') : '');
+    setDetailedContent(project.detailed_content || '');
+    setFeatured(project.featured || false);
+    setFeaturedDescription(project.featured_description || '');
+
     setSlugError('');
     setIsLoading(false);
   };
@@ -152,6 +173,11 @@ export default function EditProjectPage({ params }: any) {
 
     const supabase = createClient();
 
+    // Parse tech stack from comma-separated string to array
+    const techStackArray = techStack
+      ? techStack.split(',').map(t => t.trim()).filter(Boolean)
+      : null;
+
     const { error } = await supabase
       .from('projects')
       .update({
@@ -163,6 +189,14 @@ export default function EditProjectPage({ params }: any) {
         github_url: githubUrl || null,
         youtube_url: youtubeUrl || null,
         status: newStatus,
+        project_type: projectType,
+        company: projectType === 'professional' ? company : null,
+        start_date: projectType === 'professional' && startDate ? startDate : null,
+        end_date: projectType === 'professional' && endDate ? endDate : null,
+        tech_stack: techStackArray,
+        detailed_content: detailedContent || null,
+        featured: featured,
+        featured_description: featured && featuredDescription ? featuredDescription : null,
       })
       .eq('id', id);
 
@@ -282,6 +316,138 @@ export default function EditProjectPage({ params }: any) {
                 required
               />
             </div>
+
+            <div className="space-y-2">
+              <label htmlFor="projectType" className="text-sm font-medium">
+                Project Type <span className="text-destructive">*</span>
+              </label>
+              <select
+                id="projectType"
+                value={projectType}
+                onChange={(e) => setProjectType(e.target.value as 'professional' | 'side')}
+                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+              >
+                <option value="side">Side Project</option>
+                <option value="professional">Professional Work Experience</option>
+              </select>
+              <p className="text-xs text-muted-foreground">
+                Select if this is a professional work project or personal side project
+              </p>
+            </div>
+
+            <div className="space-y-4 p-4 border rounded-md">
+              <div className="flex items-center space-x-2">
+                <input
+                  type="checkbox"
+                  id="featured"
+                  checked={featured}
+                  onChange={(e) => setFeatured(e.target.checked)}
+                  className="h-4 w-4 rounded border-input text-primary focus:ring-2 focus:ring-ring focus:ring-offset-2"
+                />
+                <label htmlFor="featured" className="text-sm font-medium cursor-pointer">
+                  Featured Project
+                </label>
+                <p className="text-xs text-muted-foreground ml-2">
+                  (Display in Featured Projects section on home page)
+                </p>
+              </div>
+
+              {featured && (
+                <div className="space-y-2">
+                  <label htmlFor="featuredDescription" className="text-sm font-medium">
+                    Featured Description
+                  </label>
+                  <Textarea
+                    id="featuredDescription"
+                    placeholder="Brief description of what you accomplished in this project (1-2 sentences). This will appear on the home page."
+                    value={featuredDescription}
+                    onChange={(e) => setFeaturedDescription(e.target.value)}
+                    rows={3}
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Keep it concise - highlight your key achievements or impact for the home page featured section.
+                  </p>
+                </div>
+              )}
+            </div>
+
+            {projectType === 'professional' && (
+              <>
+                <div className="space-y-2">
+                  <label htmlFor="company" className="text-sm font-medium">
+                    Company <span className="text-destructive">*</span>
+                  </label>
+                  <Input
+                    id="company"
+                    placeholder="e.g., Morgan Stanley, TIAA, TCS"
+                    value={company}
+                    onChange={(e) => setCompany(e.target.value)}
+                    required={projectType === 'professional'}
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <label htmlFor="startDate" className="text-sm font-medium">
+                      Start Date <span className="text-destructive">*</span>
+                    </label>
+                    <Input
+                      id="startDate"
+                      type="date"
+                      value={startDate}
+                      onChange={(e) => setStartDate(e.target.value)}
+                      required={projectType === 'professional'}
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <label htmlFor="endDate" className="text-sm font-medium">
+                      End Date
+                    </label>
+                    <Input
+                      id="endDate"
+                      type="date"
+                      value={endDate}
+                      onChange={(e) => setEndDate(e.target.value)}
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Leave empty if currently ongoing
+                    </p>
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <label htmlFor="techStack" className="text-sm font-medium">
+                    Tech Stack
+                  </label>
+                  <Input
+                    id="techStack"
+                    placeholder="Java, Spring Boot, Angular, Elasticsearch, DB2"
+                    value={techStack}
+                    onChange={(e) => setTechStack(e.target.value)}
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Enter technologies separated by commas
+                  </p>
+                </div>
+
+                <div className="space-y-2">
+                  <label htmlFor="detailedContent" className="text-sm font-medium">
+                    Detailed Content
+                  </label>
+                  <Textarea
+                    id="detailedContent"
+                    placeholder="Detailed description of your work, achievements, challenges solved, impact metrics, etc. This will be shown on the project detail page."
+                    value={detailedContent}
+                    onChange={(e) => setDetailedContent(e.target.value)}
+                    rows={10}
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Detailed description shown when users click to view the full project. Include key achievements, technical challenges, and business impact.
+                  </p>
+                </div>
+              </>
+            )}
 
             <div className="space-y-2">
               <label htmlFor="image" className="text-sm font-medium">

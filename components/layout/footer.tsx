@@ -12,8 +12,7 @@ export function Footer() {
           <div>
             <h3 className="font-semibold text-lg mb-4">Divij Shrivastava</h3>
             <p className="text-sm text-muted-foreground">
-              Web Developer passionate about building amazing digital experiences.
-            </p>
+            Full-stack engineer writing about real engineering problems, architectural trade-offs, and lessons learned from building production systems.            </p>
           </div>
 
           {/* Quick Links */}

@@ -68,6 +68,18 @@ export default async function ProjectsPage() {
                           }`}>
                             {project.status}
                           </span>
+                          <span className={`px-2 py-1 rounded font-medium ${
+                            project.project_type === 'professional'
+                              ? 'bg-cyan-500/10 text-cyan-600 border border-cyan-500/20'
+                              : 'bg-purple-500/10 text-purple-600 border border-purple-500/20'
+                          }`}>
+                            {project.project_type === 'professional' ? 'Professional' : 'Side Project'}
+                          </span>
+                          {project.company && (
+                            <span className="px-2 py-1 rounded font-medium bg-muted text-muted-foreground">
+                              {project.company}
+                            </span>
+                          )}
                           <span>{new Date(project.created_at).toLocaleDateString()}</span>
                         </div>
                         <div className="flex gap-2 mt-2">

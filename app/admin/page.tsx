@@ -8,11 +8,13 @@ export default async function AdminDashboard() {
   const [
     { count: blogsCount },
     { count: projectsCount },
+    { count: professionalProjectsCount },
     { count: messagesCount },
     { count: activityCount }
   ] = await Promise.all([
     supabase.from('blogs').select('*', { count: 'exact', head: true }),
     supabase.from('projects').select('*', { count: 'exact', head: true }),
+    supabase.from('projects').select('*', { count: 'exact', head: true }).eq('project_type', 'professional'),
     supabase.from('messages').select('*', { count: 'exact', head: true }),
     supabase.from('user_activity').select('*', { count: 'exact', head: true }),
   ]);
@@ -24,6 +26,7 @@ export default async function AdminDashboard() {
 
   const stats = [
     { name: 'Total Blogs', value: blogsCount || 0, icon: FileText },
+    { name: 'Professional Projects', value: professionalProjectsCount || 0, icon: Briefcase },
     { name: 'Total Projects', value: projectsCount || 0, icon: Briefcase },
     { name: 'Unread Messages', value: unreadMessages || 0, icon: Mail },
     { name: 'Total Visitors', value: activityCount || 0, icon: Activity },
@@ -33,7 +36,7 @@ export default async function AdminDashboard() {
     <div>
       <h2 className="text-3xl font-bold mb-8">Dashboard</h2>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 mb-8">
         {stats.map((stat) => {
           const Icon = stat.icon;
           return (
