@@ -86,25 +86,44 @@ jobs:
       url: https://divij.tech
 
     steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
       - name: Production Deployment Approved
         run: |
           echo "✅ Production Deployment Approved"
           echo "=================================="
           echo ""
-          echo "Vercel is now deploying to production environment"
+          echo "Deploying to production environment via Vercel CLI"
           echo ""
           echo "Production Environment:"
           echo "  - Domain: https://divij.tech"
           echo "  - Project: portfolio-v2"
           echo "  - Database: Production Supabase"
-          echo ""
-          echo "⏳ Deployment typically takes 1-2 minutes"
 
-      - name: Wait for production deployment
+      - name: Install Vercel CLI
+        run: npm install --global vercel@latest
+
+      - name: Pull Vercel Environment Information
+        run: vercel pull --yes --environment=production --token=${{ secrets.VERCEL_TOKEN }}
+        env:
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+
+      - name: Build Project Artifacts
+        run: vercel build --prod --token=${{ secrets.VERCEL_TOKEN }}
+        env:
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+
+      - name: Deploy to Production
         run: |
-          echo "⏳ Waiting for Vercel production deployment..."
-          sleep 120
-          echo "✅ Production deployment should be complete"
+          echo "🚀 Deploying to production..."
+          vercel deploy --prebuilt --prod --token=${{ secrets.VERCEL_TOKEN }}
+          echo "✅ Production deployment complete!"
+        env:
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
 
       - name: Deployment Summary
         run: |
