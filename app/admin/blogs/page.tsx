@@ -1,11 +1,11 @@
 import Link from 'next/link';
-import { createClient } from '@/lib/supabase/server';
+import { createAdminClient } from '@/lib/supabase/admin';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Plus, Edit, Trash2, Eye } from 'lucide-react';
 
 export default async function BlogsPage() {
-  const supabase = await createClient();
+  const supabase = await createAdminClient();
 
   const { data: blogs } = await supabase
     .from('blogs')

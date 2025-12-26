@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import Image from 'next/image';
-import { createClient } from '@/lib/supabase/server';
+import { createAdminClient } from '@/lib/supabase/admin';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Plus, Edit, Trash2, Eye, ExternalLink, Github, Youtube } from 'lucide-react';
@@ -8,7 +8,7 @@ import { getProjectImageUrl } from '@/lib/utils/youtube';
 import { MigrateProjectsButton } from '@/components/admin/migrate-projects-button';
 
 export default async function ProjectsPage() {
-  const supabase = await createClient();
+  const supabase = await createAdminClient();
 
   const { data: projects } = await supabase
     .from('projects')

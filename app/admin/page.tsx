@@ -1,9 +1,9 @@
-import { createClient } from '@/lib/supabase/server';
+import { createAdminClient } from '@/lib/supabase/admin';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { FileText, Briefcase, Mail, Activity } from 'lucide-react';
 
 export default async function AdminDashboard() {
-  const supabase = await createClient();
+  const supabase = await createAdminClient();
 
   const [
     { count: blogsCount },
