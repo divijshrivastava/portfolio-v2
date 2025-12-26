@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Mail, MessageSquare, Send, Github, Linkedin, ExternalLink } from 'lucide-react';
+import { MessageSquare, Send, Github, Linkedin, ExternalLink } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 
 export default function ContactPage() {
@@ -126,23 +126,6 @@ export default function ContactPage() {
           <div>
             <h2 className="text-2xl font-bold mb-6 text-primary">Connect With Me</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <Card className="hover:border-primary/30 transition-all duration-300">
-                <CardContent className="p-6">
-                  <div className="flex items-start gap-4">
-                    <Mail className="h-6 w-6 text-primary mt-1 flex-shrink-0" />
-                    <div>
-                      <h3 className="font-semibold mb-1">Email</h3>
-                      <a
-                        href="mailto:contact@divij.dev"
-                        className="text-muted-foreground hover:text-primary transition-colors"
-                      >
-                        contact@divij.dev
-                      </a>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
               <Card className="hover:border-primary/30 transition-all duration-300">
                 <CardContent className="p-6">
                   <div className="flex items-start gap-4">
