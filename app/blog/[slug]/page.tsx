@@ -106,6 +106,7 @@ export default async function BlogPost({
                       alt="Divij Shrivastava"
                       fill
                       className="object-cover"
+                      style={{ objectPosition: 'center 30%' }}
                     />
                   </div>
                   <span className="font-medium text-foreground">Divij Shrivastava</span>
