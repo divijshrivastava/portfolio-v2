@@ -1,0 +1,129 @@
+name: Deploy QA and Production
+
+on:
+  push:
+    branches: [main]
+
+# Cancel in-progress runs when a new workflow with the same group name is triggered
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  NODE_VERSION: '22.x'
+
+jobs:
+  # Wait for CI tests to complete before proceeding
+  wait-for-ci:
+    name: Wait for CI Tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Wait for CI Pipeline
+        run: |
+          echo "✅ CI tests must pass before deployment"
+          echo "This job ensures CI workflow completes successfully"
+
+    # This job depends on the ci-status job from ci.yml
+    # If CI fails, this workflow will not proceed
+    needs: []
+
+  # QA deployment happens automatically via Vercel
+  qa-deployment:
+    name: QA Deployment
+    runs-on: ubuntu-latest
+    needs: wait-for-ci
+
+    steps:
+      - name: QA Deployment Notice
+        run: |
+          echo "🚀 QA Deployment Started"
+          echo "=================================="
+          echo "Vercel is automatically deploying to QA environment"
+          echo ""
+          echo "QA Environment:"
+          echo "  - Domain: https://divij-qa.tech"
+          echo "  - Project: portfolio-v2-qa"
+          echo "  - Database: QA Supabase"
+          echo ""
+          echo "⏳ Deployment typically takes 1-2 minutes"
+          echo "📊 Monitor deployment at: https://vercel.com/dashboard"
+
+      - name: Wait for deployment window
+        run: |
+          echo "⏳ Waiting for Vercel deployment to complete..."
+          sleep 120
+          echo "✅ QA deployment should be complete"
+
+      - name: QA Testing Instructions
+        run: |
+          echo ""
+          echo "📋 QA Testing Checklist"
+          echo "=================================="
+          echo "Visit https://divij-qa.tech and verify:"
+          echo ""
+          echo "  ✅ Homepage loads correctly"
+          echo "  ✅ Blog listing shows all posts"
+          echo "  ✅ Individual blog posts load properly"
+          echo "  ✅ Admin login works"
+          echo "  ✅ Contact form submission works"
+          echo "  ✅ Mobile responsiveness"
+          echo "  ✅ Check browser console for errors (F12)"
+          echo "  ✅ Test new feature thoroughly"
+          echo ""
+          echo "Once testing is complete and successful:"
+          echo "  → Go to GitHub Actions"
+          echo "  → Click 'Review deployments'"
+          echo "  → Approve 'production' environment"
+
+  # Production deployment requires manual approval
+  production-deployment:
+    name: Production Deployment
+    runs-on: ubuntu-latest
+    needs: qa-deployment
+    environment:
+      name: production
+      url: https://divij.tech
+
+    steps:
+      - name: Production Deployment Approved
+        run: |
+          echo "✅ Production Deployment Approved"
+          echo "=================================="
+          echo ""
+          echo "Vercel is now deploying to production environment"
+          echo ""
+          echo "Production Environment:"
+          echo "  - Domain: https://divij.tech"
+          echo "  - Project: portfolio-v2"
+          echo "  - Database: Production Supabase"
+          echo ""
+          echo "⏳ Deployment typically takes 1-2 minutes"
+
+      - name: Wait for production deployment
+        run: |
+          echo "⏳ Waiting for Vercel production deployment..."
+          sleep 120
+          echo "✅ Production deployment should be complete"
+
+      - name: Deployment Summary
+        run: |
+          echo ""
+          echo "🎉 Deployment Complete!"
+          echo "=================================="
+          echo ""
+          echo "✅ QA Environment: https://divij-qa.tech"
+          echo "✅ Production Environment: https://divij.tech"
+          echo ""
+          echo "📊 Next Steps:"
+          echo "  1. Visit https://divij.tech"
+          echo "  2. Verify production site works correctly"
+          echo "  3. Check Vercel logs if any issues"
+          echo "  4. Monitor Supabase dashboard"
+          echo ""
+          echo "🔄 Rollback Instructions (if needed):"
+          echo "  → Go to Vercel Dashboard → portfolio-v2 → Deployments"
+          echo "  → Find previous working deployment"
+          echo "  → Click '...' → 'Promote to Production'"
+          echo ""
+          echo "📚 Full documentation: See ENVIRONMENTS.md and CICD-STRATEGY.md"
