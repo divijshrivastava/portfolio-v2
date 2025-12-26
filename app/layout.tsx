@@ -27,14 +27,6 @@ export const metadata: Metadata = {
     description: "Portfolio of Divij Shrivastava - Senior Full-Stack Engineer specializing in web development and cloud architecture.",
     creator: "@divijshrivastava",
   },
-  icons: {
-    icon: [
-      { url: '/icon.svg', type: 'image/svg+xml' },
-    ],
-    apple: [
-      { url: '/apple-icon.svg', type: 'image/svg+xml' },
-    ],
-  },
 };
 
 export default function RootLayout({
