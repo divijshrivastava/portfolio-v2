@@ -1,0 +1,19 @@
+<svg width="64" height="64" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background with gradient -->
+  <defs>
+    <linearGradient id="bgGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#3b82f6;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#1d4ed8;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+
+  <!-- Rounded rectangle background -->
+  <rect width="64" height="64" rx="12" fill="url(#bgGradient)"/>
+
+  <!-- DS Text -->
+  <text x="32" y="44" font-family="system-ui, -apple-system, sans-serif" font-size="32" font-weight="700" text-anchor="middle" fill="white">DS</text>
+
+  <!-- Small code brackets accent -->
+  <text x="8" y="18" font-family="monospace" font-size="14" font-weight="600" fill="rgba(255,255,255,0.6)">&lt;</text>
+  <text x="52" y="18" font-family="monospace" font-size="14" font-weight="600" fill="rgba(255,255,255,0.6)">/&gt;</text>
+</svg>

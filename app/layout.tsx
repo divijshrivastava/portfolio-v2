@@ -5,8 +5,36 @@ import { Footer } from "@/components/layout/footer";
 import { ThemeProvider } from "@/components/theme-provider";
 
 export const metadata: Metadata = {
-  title: "Divij Shrivastava - Web Developer & Engineer",
-  description: "Portfolio of Divij Shrivastava - Web Developer, Blogger, and Tech Enthusiast",
+  title: {
+    default: "Divij Shrivastava - Senior Full-Stack Engineer",
+    template: "%s | Divij Shrivastava"
+  },
+  description: "Portfolio of Divij Shrivastava - Senior Full-Stack Engineer specializing in web development, cloud architecture, and modern tech solutions. Explore my projects, blog posts, and technical expertise.",
+  keywords: ["Full-Stack Developer", "Web Developer", "Software Engineer", "React", "Next.js", "Node.js", "Cloud Architecture"],
+  authors: [{ name: "Divij Shrivastava" }],
+  creator: "Divij Shrivastava",
+  openGraph: {
+    type: "website",
+    locale: "en_US",
+    url: "https://divij.tech",
+    title: "Divij Shrivastava - Senior Full-Stack Engineer",
+    description: "Portfolio of Divij Shrivastava - Senior Full-Stack Engineer specializing in web development, cloud architecture, and modern tech solutions.",
+    siteName: "Divij Shrivastava Portfolio",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Divij Shrivastava - Senior Full-Stack Engineer",
+    description: "Portfolio of Divij Shrivastava - Senior Full-Stack Engineer specializing in web development and cloud architecture.",
+    creator: "@divijshrivastava",
+  },
+  icons: {
+    icon: [
+      { url: '/icon.svg', type: 'image/svg+xml' },
+    ],
+    apple: [
+      { url: '/apple-icon.svg', type: 'image/svg+xml' },
+    ],
+  },
 };
 
 export default function RootLayout({
