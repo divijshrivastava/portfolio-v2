@@ -237,7 +237,13 @@ export async function submitContactForm(formData: ContactFormData) {
     }
 
     // Update rate limit
-    await updateRateLimit(ipAddress);
+    try {
+      await updateRateLimit(ipAddress);
+    } catch (rateLimitError) {
+      // Log the error but don't fail the submission
+      // Message was already saved successfully
+      console.error('Rate limit update failed:', rateLimitError);
+    }
 
     return {
       success: true,
