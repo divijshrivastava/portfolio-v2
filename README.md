@@ -24,8 +24,30 @@ This is my personal portfolio website built as a real-world full-stack product w
 ### Projects
 ![Projects](.github/screenshots/projects.png)
 
-### Admin Dashboard
+### Admin Panel
+
+<details>
+<summary>Click to view all admin panel screenshots</summary>
+
+#### Dashboard
 ![Admin Dashboard](.github/screenshots/admin-dashboard.png)
+
+#### Blog Management
+![Admin Blogs](.github/screenshots/admin-blogs.png)
+
+#### Project Management
+![Admin Projects](.github/screenshots/admin-projects.png)
+
+#### Messages Inbox
+![Admin Messages](.github/screenshots/admin-messages.png)
+
+#### User Activity Tracking
+![Admin Activity](.github/screenshots/admin-activity.png)
+
+#### Resume Management
+![Admin Resume](.github/screenshots/admin-resume.png)
+
+</details>
 
 ⸻
 
