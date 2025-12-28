@@ -51,15 +51,35 @@ export default function NewProjectPage() {
   const checkSlugAvailability = async (slugToCheck: string): Promise<boolean> => {
     if (!slugToCheck) return false;
 
-    const supabase = createClient();
-    const { data, error } = await supabase
-      .from('projects')
-      .select('id')
-      .eq('slug', slugToCheck)
-      .single();
+    try {
+      const supabase = createClient();
+      const { data, error } = await supabase
+        .from('projects')
+        .select('id')
+        .eq('slug', slugToCheck)
+        .maybeSingle(); // Use maybeSingle() instead of single()
 
-    // If no data found, slug is available
-    return !data && error?.code === 'PGRST116';
+      // If no data found, slug is available
+      return !data;
+    } catch (error) {
+      console.error('Error checking slug availability:', error);
+      // On error, assume slug is not available to be safe
+      return false;
+    }
+  };
+
+  const generateUniqueSlug = async (baseSlug: string): Promise<string> => {
+    let slug = baseSlug;
+    let counter = 1;
+    let isAvailable = await checkSlugAvailability(slug);
+
+    while (!isAvailable && counter < 100) {
+      slug = `${baseSlug}-${counter}`;
+      isAvailable = await checkSlugAvailability(slug);
+      counter++;
+    }
+
+    return slug;
   };
 
   const handleSlugChange = async (value: string) => {
@@ -70,7 +90,7 @@ export default function NewProjectPage() {
     if (newSlug) {
       const isAvailable = await checkSlugAvailability(newSlug);
       if (!isAvailable) {
-        setSlugError('This slug is already in use. Please choose a different one.');
+        setSlugError('This slug is already in use. Try adding a number or different text.');
       }
     }
   };
@@ -116,19 +136,26 @@ export default function NewProjectPage() {
       return;
     }
 
-    if (slugError) {
-      alert('Please fix the slug error before submitting.');
-      return;
-    }
+    setIsSubmitting(true);
 
-    // Double-check slug availability before submitting
+    // Double-check slug availability and auto-generate unique slug if needed
+    let finalSlug = slug;
     const isAvailable = await checkSlugAvailability(slug);
     if (!isAvailable) {
-      setSlugError('This slug is already in use. Please choose a different one.');
-      return;
-    }
+      console.log('Slug is taken, generating unique slug...');
+      finalSlug = await generateUniqueSlug(slug);
+      setSlug(finalSlug);
+      setSlugError('');
 
-    setIsSubmitting(true);
+      if (finalSlug === slug) {
+        // Failed to generate unique slug
+        setSlugError('Unable to generate unique slug. Please try a different title.');
+        setIsSubmitting(false);
+        return;
+      }
+
+      alert(`Slug was already taken. Using "${finalSlug}" instead.`);
+    }
 
     const supabase = createClient();
 
@@ -139,7 +166,7 @@ export default function NewProjectPage() {
 
     const { error } = await supabase.from('projects').insert({
       title,
-      slug,
+      slug: finalSlug,
       description,
       image_url: imageUrl,
       project_url: projectUrl || null,
