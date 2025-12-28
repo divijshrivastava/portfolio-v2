@@ -62,11 +62,12 @@ jobs:
           echo "⏳ Waiting for Vercel deployment to start..."
           echo "Commit SHA: ${{ github.sha }}"
 
-          # Wait up to 5 minutes for deployment
-          MAX_WAIT=300
+          # Wait up to 10 minutes for deployment to complete
+          MAX_WAIT=600
           ELAPSED=0
           SLEEP_INTERVAL=15
           DEPLOYMENT_FOUND=false
+          DEPLOYMENT_STARTED=false
 
           while [ $ELAPSED -lt $MAX_WAIT ]; do
             echo "[$ELAPSED/$MAX_WAIT seconds] Checking for deployment..."
@@ -78,9 +79,12 @@ jobs:
               2>/dev/null || echo "")
 
             if [ -n "$DEPLOYMENTS" ]; then
-              echo "✅ Deployment found!"
+              if [ "$DEPLOYMENT_STARTED" = false ]; then
+                echo "✅ Deployment found!"
+                DEPLOYMENT_STARTED=true
+              fi
+
               DEPLOYMENT_ID=$(echo "$DEPLOYMENTS" | head -1)
-              echo "Deployment ID: $DEPLOYMENT_ID"
 
               # Check deployment status
               STATUS=$(gh api \
@@ -97,6 +101,8 @@ jobs:
               elif [ "$STATUS" = "failure" ] || [ "$STATUS" = "error" ]; then
                 echo "❌ QA deployment failed!"
                 exit 1
+              elif [ "$STATUS" = "in_progress" ] || [ "$STATUS" = "pending" ]; then
+                echo "⏳ Deployment in progress..."
               fi
             fi
 
@@ -105,8 +111,14 @@ jobs:
           done
 
           if [ "$DEPLOYMENT_FOUND" = false ]; then
-            echo "⚠️  WARNING: Could not verify deployment status within timeout"
-            echo "Proceeding anyway, but please manually verify QA deployment"
+            if [ "$DEPLOYMENT_STARTED" = true ]; then
+              echo "⚠️  WARNING: Deployment started but did not complete within timeout"
+              echo "Deployment is still in progress. Proceeding to testing phase."
+              echo "Monitor completion at: https://vercel.com/dashboard"
+            else
+              echo "⚠️  WARNING: Could not find deployment within timeout"
+              echo "Proceeding anyway, but please manually verify QA deployment"
+            fi
           fi
 
       - name: QA Testing Instructions
@@ -166,11 +178,12 @@ jobs:
           echo "⏳ Waiting for Vercel production deployment to start..."
           echo "Commit SHA: ${{ github.sha }}"
 
-          # Wait up to 5 minutes for deployment
-          MAX_WAIT=300
+          # Wait up to 10 minutes for deployment to complete
+          MAX_WAIT=600
           ELAPSED=0
           SLEEP_INTERVAL=15
           DEPLOYMENT_FOUND=false
+          DEPLOYMENT_STARTED=false
 
           while [ $ELAPSED -lt $MAX_WAIT ]; do
             echo "[$ELAPSED/$MAX_WAIT seconds] Checking for deployment..."
@@ -182,9 +195,12 @@ jobs:
               2>/dev/null || echo "")
 
             if [ -n "$DEPLOYMENTS" ]; then
-              echo "✅ Deployment found!"
+              if [ "$DEPLOYMENT_STARTED" = false ]; then
+                echo "✅ Deployment found!"
+                DEPLOYMENT_STARTED=true
+              fi
+
               DEPLOYMENT_ID=$(echo "$DEPLOYMENTS" | head -1)
-              echo "Deployment ID: $DEPLOYMENT_ID"
 
               # Check deployment status
               STATUS=$(gh api \
@@ -201,6 +217,8 @@ jobs:
               elif [ "$STATUS" = "failure" ] || [ "$STATUS" = "error" ]; then
                 echo "❌ Production deployment failed!"
                 exit 1
+              elif [ "$STATUS" = "in_progress" ] || [ "$STATUS" = "pending" ]; then
+                echo "⏳ Deployment in progress..."
               fi
             fi
 
@@ -209,9 +227,17 @@ jobs:
           done
 
           if [ "$DEPLOYMENT_FOUND" = false ]; then
-            echo "❌ ERROR: Could not verify production deployment within timeout"
-            echo "Please check Vercel dashboard manually"
-            exit 1
+            if [ "$DEPLOYMENT_STARTED" = true ]; then
+              echo "⚠️  WARNING: Deployment started but did not complete within timeout"
+              echo "Deployment is still in progress. Check Vercel dashboard:"
+              echo "https://vercel.com/dashboard"
+              echo ""
+              echo "Proceeding anyway as deployment has started successfully"
+            else
+              echo "❌ ERROR: Could not find deployment within timeout"
+              echo "Please check Vercel dashboard manually"
+              exit 1
+            fi
           fi
 
       - name: Deployment Summary

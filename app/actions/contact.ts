@@ -84,10 +84,7 @@ async function checkRateLimit(ipAddress: string): Promise<RateLimitResult> {
 }
 
 async function updateRateLimit(ipAddress: string): Promise<void> {
-  console.log('[Rate Limit] updateRateLimit called for IP:', ipAddress);
-
   const supabase = createAdminClient();
-  console.log('[Rate Limit] Admin client created successfully');
 
   const { data: existing, error: fetchError } = await supabase
     .from('rate_limits')
@@ -95,8 +92,6 @@ async function updateRateLimit(ipAddress: string): Promise<void> {
     .eq('ip_address', ipAddress)
     .eq('action_type', 'contact_form')
     .single();
-
-  console.log('[Rate Limit] Fetch result:', { hasData: !!existing, errorCode: fetchError?.code });
 
   if (fetchError && fetchError.code !== 'PGRST116') {
     // PGRST116 = no rows returned, which is OK for first submission
@@ -106,7 +101,6 @@ async function updateRateLimit(ipAddress: string): Promise<void> {
   const now = new Date();
 
   if (!existing) {
-    console.log('[Rate Limit] Creating new rate limit record...');
     // Create new rate limit record
     const { error: insertError } = await supabase.from('rate_limits').insert({
       ip_address: ipAddress,
@@ -120,7 +114,6 @@ async function updateRateLimit(ipAddress: string): Promise<void> {
       console.error('[Rate Limit] Error creating rate limit record:', insertError);
       throw new Error(`Failed to create rate limit: ${insertError.message}`);
     }
-    console.log('[Rate Limit] Rate limit record created successfully');
   } else {
     const firstAttempt = new Date(existing.first_attempt_at);
     const hoursSinceFirstAttempt = (now.getTime() - firstAttempt.getTime()) / (1000 * 60 * 60);
@@ -176,11 +169,6 @@ async function getClientIP(): Promise<string> {
 export async function submitContactForm(formData: ContactFormData) {
   try {
     const ipAddress = await getClientIP();
-
-    console.log('[Contact Form] Starting submission...');
-    console.log('[Contact Form] IP Address:', ipAddress);
-    console.log('[Contact Form] Has Service Role Key:', !!process.env.SUPABASE_SERVICE_ROLE_KEY);
-    console.log('[Contact Form] Supabase URL:', process.env.NEXT_PUBLIC_SUPABASE_URL?.substring(0, 40));
 
     // Basic validation
     if (!formData.name || !formData.email || !formData.message) {
@@ -243,25 +231,17 @@ export async function submitContactForm(formData: ContactFormData) {
     }
 
     // Update rate limit
-    let rateLimitDebug = '';
     try {
       await updateRateLimit(ipAddress);
-      rateLimitDebug = 'Rate limit updated successfully';
     } catch (rateLimitError: any) {
       // Log the error but don't fail the submission
       // Message was already saved successfully
       console.error('Rate limit update failed:', rateLimitError);
-      rateLimitDebug = `Rate limit update failed: ${rateLimitError.message}`;
     }
 
     return {
       success: true,
       message: 'Message sent successfully!',
-      debug: {
-        ipAddress,
-        hasServiceKey: !!process.env.SUPABASE_SERVICE_ROLE_KEY,
-        rateLimitDebug,
-      },
     };
   } catch (error) {
     console.error('Contact form error:', error);

@@ -17,31 +17,19 @@ export default function ContactPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [debugInfo, setDebugInfo] = useState<any>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
     setError(null);
-    setDebugInfo(null);
 
     try {
-      console.log('Form submission started');
       const result = await submitContactForm(formData);
-      console.log('Form submission result:', result);
 
       if (result.success) {
-        console.log('Success! Setting submitted to true');
         setSubmitted(true);
         setFormData({ name: '', email: '', message: '' });
-        // @ts-ignore - debug field for debugging purposes
-        if (result.debug) {
-          console.log('Debug info:', result.debug);
-          // @ts-ignore
-          setDebugInfo(result.debug);
-        }
       } else {
-        console.log('Failed with error:', result.error);
         setError(result.error || 'Failed to send message. Please try again.');
       }
     } catch (err) {
@@ -68,15 +56,7 @@ export default function ContactPage() {
               <p className="text-muted-foreground mb-6">
                 Thank you! I've received your message and will get back to you soon.
               </p>
-              {debugInfo && (
-                <div className="mb-6 p-4 bg-muted rounded-md text-left text-xs font-mono">
-                  <div className="font-bold mb-2">Debug Info:</div>
-                  <div>IP: {debugInfo.ipAddress}</div>
-                  <div>Has Service Key: {debugInfo.hasServiceKey ? 'Yes' : 'No'}</div>
-                  <div>Rate Limit: {debugInfo.rateLimitDebug}</div>
-                </div>
-              )}
-              <Button onClick={() => { setSubmitted(false); setDebugInfo(null); }}>
+              <Button onClick={() => setSubmitted(false)}>
                 Send Another Message
               </Button>
             </CardContent>
