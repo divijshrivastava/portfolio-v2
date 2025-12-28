@@ -42,14 +42,6 @@ export async function generateMetadata({
     const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://divij.tech';
     const projectImage = getProjectImageUrl(project.image_url, project.youtube_url);
 
-    console.log('[Metadata Debug]', {
-      slug,
-      image_url: project.image_url,
-      youtube_url: project.youtube_url,
-      projectImage,
-      baseUrl
-    });
-
     // Ensure image URL is absolute for social media crawlers
     let ogImage = `${baseUrl}/og-image.png`; // Default fallback (1200x630)
     if (projectImage) {
@@ -57,8 +49,6 @@ export async function generateMetadata({
       // Otherwise, treat it as relative and prepend baseUrl
       ogImage = projectImage.startsWith('http') ? projectImage : `${baseUrl}${projectImage}`;
     }
-
-    console.log('[Metadata Debug] Final OG Image:', ogImage);
 
     return {
       title: project.title,
@@ -71,8 +61,6 @@ export async function generateMetadata({
         images: [
           {
             url: ogImage,
-            width: 1200,
-            height: 630,
             alt: project.title,
           },
         ],
