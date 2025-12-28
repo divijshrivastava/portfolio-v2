@@ -60,7 +60,14 @@
       "Bash(/tmp/add-supabase-token.sh)",
       "Bash(supabase login:*)",
       "Bash(vercel domains:*)",
-      "Bash(git rm:*)"
+      "Bash(git rm:*)",
+      "Bash(IMAGE-MIGRATION.md )",
+      "Bash(MIGRATION-GUIDE.md )",
+      "Bash(MIGRATION-TOOLS-COMPARISON.md )",
+      "Bash(MIGRATIONS.md )",
+      "Bash(SUPABASE-MIGRATIONS.md )",
+      "Bash(SYNC-DATABASES.md )",
+      "Bash(SYNC-SETUP-GUIDE.md)"
     ]
   }
 }
