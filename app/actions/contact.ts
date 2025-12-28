@@ -1,6 +1,7 @@
 'use server';
 
 import { createClient } from '@/lib/supabase/server';
+import { createAdminClient } from '@/lib/supabase/admin';
 import { headers } from 'next/headers';
 
 // Rate limiting configuration
@@ -23,7 +24,7 @@ interface RateLimitResult {
 }
 
 async function checkRateLimit(ipAddress: string): Promise<RateLimitResult> {
-  const supabase = await createClient();
+  const supabase = createAdminClient();
 
   // Get rate limit record for this IP
   const { data: rateLimit } = await supabase
@@ -89,26 +90,36 @@ async function checkRateLimit(ipAddress: string): Promise<RateLimitResult> {
 }
 
 async function updateRateLimit(ipAddress: string): Promise<void> {
-  const supabase = await createClient();
+  const supabase = createAdminClient();
 
-  const { data: existing } = await supabase
+  const { data: existing, error: fetchError } = await supabase
     .from('rate_limits')
     .select('*')
     .eq('ip_address', ipAddress)
     .eq('action_type', 'contact_form')
     .single();
 
+  if (fetchError && fetchError.code !== 'PGRST116') {
+    // PGRST116 = no rows returned, which is OK for first submission
+    console.error('Error fetching rate limit:', fetchError);
+  }
+
   const now = new Date();
 
   if (!existing) {
     // Create new rate limit record
-    await supabase.from('rate_limits').insert({
+    const { error: insertError } = await supabase.from('rate_limits').insert({
       ip_address: ipAddress,
       action_type: 'contact_form',
       attempt_count: 1,
       first_attempt_at: now.toISOString(),
       last_attempt_at: now.toISOString(),
     });
+
+    if (insertError) {
+      console.error('Error creating rate limit record:', insertError);
+      throw new Error(`Failed to create rate limit: ${insertError.message}`);
+    }
   } else {
     const firstAttempt = new Date(existing.first_attempt_at);
     const hoursSinceFirstAttempt = (now.getTime() - firstAttempt.getTime()) / (1000 * 60 * 60);
