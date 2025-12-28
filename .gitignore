@@ -47,3 +47,22 @@ next-env.d.ts
 .temp
 *.tmp
 .tmp
+
+# documentation and utility scripts (keep locally, not in GitHub)
+GETTING-STARTED.md
+SETUP.md
+CICD-STRATEGY.md
+DEPLOYMENT.md
+ENVIRONMENTS.md
+AUTOMATED-MIGRATIONS-QUICKSTART.md
+MIGRATION-WORKFLOW.md
+GITHUB-SECRETS-SETUP.md
+COLOR-SCHEME.md
+IMPLEMENTATION-SUMMARY.md
+PORTFOLIO-COPY.md
+scripts/fix-qa-admin.mjs
+scripts/sync-data.mjs
+scripts/push-to-prod.sh
+scripts/db-link-qa.sh
+scripts/db-link-prod.sh
+scripts/setup-supabase-refs.sh
