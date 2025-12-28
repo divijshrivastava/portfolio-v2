@@ -59,7 +59,8 @@
       "Bash(fi)",
       "Bash(/tmp/add-supabase-token.sh)",
       "Bash(supabase login:*)",
-      "Bash(vercel domains:*)"
+      "Bash(vercel domains:*)",
+      "Bash(git rm:*)"
     ]
   }
 }
