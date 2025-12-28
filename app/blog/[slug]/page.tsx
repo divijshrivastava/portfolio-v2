@@ -38,7 +38,14 @@ export async function generateMetadata({
     }
 
     const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://divij.tech';
-    const ogImage = blog.cover_image_url || `${baseUrl}/og-image.png`;
+
+    // Ensure image URL is absolute for social media crawlers
+    let ogImage = `${baseUrl}/og-image.png`; // Default fallback
+    if (blog.cover_image_url) {
+      // If URL is already absolute (starts with http:// or https://), use it
+      // Otherwise, treat it as relative and prepend baseUrl
+      ogImage = blog.cover_image_url.startsWith('http') ? blog.cover_image_url : `${baseUrl}${blog.cover_image_url}`;
+    }
 
     return {
       title: blog.title,

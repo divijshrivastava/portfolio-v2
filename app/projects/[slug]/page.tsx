@@ -41,7 +41,14 @@ export async function generateMetadata({
 
     const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://divij.tech';
     const projectImage = getProjectImageUrl(project.image_url, project.youtube_url);
-    const ogImage = projectImage || `${baseUrl}/og-image.png`;
+
+    // Ensure image URL is absolute for social media crawlers
+    let ogImage = `${baseUrl}/og-image.png`; // Default fallback
+    if (projectImage) {
+      // If URL is already absolute (starts with http:// or https://), use it
+      // Otherwise, treat it as relative and prepend baseUrl
+      ogImage = projectImage.startsWith('http') ? projectImage : `${baseUrl}${projectImage}`;
+    }
 
     return {
       title: project.title,
