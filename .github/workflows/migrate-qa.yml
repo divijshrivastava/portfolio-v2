@@ -1,0 +1,63 @@
+name: Migrate QA Database
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'supabase/migrations/**'
+  workflow_dispatch: # Allow manual triggering
+
+jobs:
+  migrate-qa:
+    name: Apply Migrations to QA
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Supabase CLI
+        uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Link to QA Supabase
+        run: |
+          supabase link --project-ref ${{ secrets.SUPABASE_QA_PROJECT_REF }}
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+
+      - name: Apply migrations to QA
+        run: |
+          echo "📋 Migrations to apply:"
+          supabase migration list
+          echo ""
+          echo "🔄 Applying migrations to QA..."
+          echo "y" | supabase db push
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_QA_DB_PASSWORD }}
+
+      - name: Verify QA migrations
+        run: |
+          echo "✅ QA Migration Status:"
+          supabase migration list
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+
+      - name: QA Testing Instructions
+        run: |
+          echo ""
+          echo "✅ Migrations applied to QA successfully!"
+          echo "🌐 Test on: https://divij-qa.tech"
+          echo ""
+          echo "📋 Testing Checklist:"
+          echo "  ✅ Verify schema changes"
+          echo "  ✅ Test affected features"
+          echo "  ✅ Check for errors"
+          echo "  ✅ Ensure data integrity"
+          echo ""
+          echo "🚀 When QA testing passes:"
+          echo "  → Go to: https://github.com/divijshrivastava/portfolio-v2/actions/workflows/migrate-production.yml"
+          echo "  → Click 'Run workflow'"
+          echo "  → Migrations will apply to production"
