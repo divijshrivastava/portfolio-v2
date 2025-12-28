@@ -6,9 +6,9 @@ import { headers } from 'next/headers';
 
 // Rate limiting configuration
 const RATE_LIMIT_CONFIG = {
-  MAX_ATTEMPTS_PER_HOUR: 3, // Max 3 submissions per hour
-  MAX_ATTEMPTS_PER_DAY: 10, // Max 10 submissions per day
-  COOLDOWN_MINUTES: 5, // 5 minutes between submissions
+  FREE_MESSAGES: 3, // First 3 messages are free (no cooldown)
+  COOLDOWN_MINUTES: 5, // 5 minutes between submissions after free messages
+  MAX_DAILY_MESSAGES: 15, // Max 15 messages per day
 };
 
 interface ContactFormData {
@@ -25,6 +25,22 @@ interface RateLimitResult {
 
 async function checkRateLimit(ipAddress: string): Promise<RateLimitResult> {
   const supabase = createAdminClient();
+  const now = new Date();
+
+  // Check daily limit first (last 24 hours)
+  const { count } = await supabase
+    .from('messages')
+    .select('*', { count: 'exact', head: true })
+    .eq('ip_address', ipAddress)
+    .gte('created_at', new Date(now.getTime() - 24 * 60 * 60 * 1000).toISOString());
+
+  if (count && count >= RATE_LIMIT_CONFIG.MAX_DAILY_MESSAGES) {
+    return {
+      allowed: false,
+      error: `You've reached the maximum of ${RATE_LIMIT_CONFIG.MAX_DAILY_MESSAGES} messages in 24 hours. Please try again tomorrow.`,
+      waitTime: 3600,
+    };
+  }
 
   // Get rate limit record for this IP
   const { data: rateLimit } = await supabase
@@ -34,55 +50,33 @@ async function checkRateLimit(ipAddress: string): Promise<RateLimitResult> {
     .eq('action_type', 'contact_form')
     .single();
 
-  const now = new Date();
-
   if (!rateLimit) {
     // First submission - allow
     return { allowed: true };
   }
 
-  const lastAttempt = new Date(rateLimit.last_attempt_at);
   const firstAttempt = new Date(rateLimit.first_attempt_at);
-  const minutesSinceLastAttempt = (now.getTime() - lastAttempt.getTime()) / (1000 * 60);
+  const lastAttempt = new Date(rateLimit.last_attempt_at);
   const hoursSinceFirstAttempt = (now.getTime() - firstAttempt.getTime()) / (1000 * 60 * 60);
+  const minutesSinceLastAttempt = (now.getTime() - lastAttempt.getTime()) / (1000 * 60);
 
-  // Check cooldown period (5 minutes between submissions)
+  // Reset counter if more than 24 hours have passed
+  if (hoursSinceFirstAttempt >= 24) {
+    return { allowed: true };
+  }
+
+  // First 3 messages are free (no cooldown)
+  if (rateLimit.attempt_count < RATE_LIMIT_CONFIG.FREE_MESSAGES) {
+    return { allowed: true };
+  }
+
+  // After 3 messages, enforce 5-minute cooldown
   if (minutesSinceLastAttempt < RATE_LIMIT_CONFIG.COOLDOWN_MINUTES) {
     const waitTime = Math.ceil((RATE_LIMIT_CONFIG.COOLDOWN_MINUTES - minutesSinceLastAttempt) * 60);
     return {
       allowed: false,
       error: `Please wait ${Math.ceil(RATE_LIMIT_CONFIG.COOLDOWN_MINUTES - minutesSinceLastAttempt)} minutes before submitting again.`,
       waitTime,
-    };
-  }
-
-  // Reset counter if more than 1 hour has passed
-  if (hoursSinceFirstAttempt >= 1) {
-    return { allowed: true };
-  }
-
-  // Check hourly limit
-  if (rateLimit.attempt_count >= RATE_LIMIT_CONFIG.MAX_ATTEMPTS_PER_HOUR) {
-    const waitTime = Math.ceil((60 - hoursSinceFirstAttempt * 60) * 60);
-    return {
-      allowed: false,
-      error: `You've reached the maximum number of submissions (${RATE_LIMIT_CONFIG.MAX_ATTEMPTS_PER_HOUR}) per hour. Please try again later.`,
-      waitTime,
-    };
-  }
-
-  // Check daily limit (last 24 hours)
-  const { count } = await supabase
-    .from('messages')
-    .select('*', { count: 'exact', head: true })
-    .eq('ip_address', ipAddress)
-    .gte('created_at', new Date(now.getTime() - 24 * 60 * 60 * 1000).toISOString());
-
-  if (count && count >= RATE_LIMIT_CONFIG.MAX_ATTEMPTS_PER_DAY) {
-    return {
-      allowed: false,
-      error: `You've reached the maximum number of submissions (${RATE_LIMIT_CONFIG.MAX_ATTEMPTS_PER_DAY}) in 24 hours. Please try again tomorrow.`,
-      waitTime: 3600,
     };
   }
 
@@ -131,8 +125,8 @@ async function updateRateLimit(ipAddress: string): Promise<void> {
     const firstAttempt = new Date(existing.first_attempt_at);
     const hoursSinceFirstAttempt = (now.getTime() - firstAttempt.getTime()) / (1000 * 60 * 60);
 
-    if (hoursSinceFirstAttempt >= 1) {
-      // Reset counter after 1 hour
+    if (hoursSinceFirstAttempt >= 24) {
+      // Reset counter after 24 hours
       await supabase
         .from('rate_limits')
         .update({
