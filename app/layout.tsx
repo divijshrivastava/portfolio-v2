@@ -24,9 +24,9 @@ export const metadata: Metadata = {
     siteName: "Divij Shrivastava Portfolio",
     images: [
       {
-        url: `${baseUrl}/divij-headshot.png`,
+        url: `${baseUrl}/og-image.png`,
         width: 1200,
-        height: 1200,
+        height: 630,
         alt: "Divij Shrivastava - Senior Full-Stack Engineer",
       },
     ],
@@ -36,7 +36,7 @@ export const metadata: Metadata = {
     title: "Divij Shrivastava - Senior Full-Stack Engineer",
     description: "Portfolio of Divij Shrivastava - Senior Full-Stack Engineer specializing in web development and cloud architecture.",
     creator: "@divijshrivastava",
-    images: [`${baseUrl}/divij-headshot.png`],
+    images: [`${baseUrl}/og-image.png`],
   },
 };
 

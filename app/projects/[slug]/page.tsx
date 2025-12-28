@@ -43,7 +43,7 @@ export async function generateMetadata({
     const projectImage = getProjectImageUrl(project.image_url, project.youtube_url);
 
     // Ensure image URL is absolute for social media crawlers
-    let ogImage = `${baseUrl}/divij-headshot.png`; // Default fallback to hero image
+    let ogImage = `${baseUrl}/og-image.png`; // Default fallback (1200x630)
     if (projectImage) {
       // If URL is already absolute (starts with http:// or https://), use it
       // Otherwise, treat it as relative and prepend baseUrl
