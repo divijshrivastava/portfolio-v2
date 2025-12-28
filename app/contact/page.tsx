@@ -25,18 +25,28 @@ export default function ContactPage() {
     setError(null);
     setDebugInfo(null);
 
-    const result = await submitContactForm(formData);
+    try {
+      console.log('Form submission started');
+      const result = await submitContactForm(formData);
+      console.log('Form submission result:', result);
 
-    if (result.success) {
-      setSubmitted(true);
-      setFormData({ name: '', email: '', message: '' });
-      // @ts-ignore - debug field for debugging purposes
-      if (result.debug) {
-        // @ts-ignore
-        setDebugInfo(result.debug);
+      if (result.success) {
+        console.log('Success! Setting submitted to true');
+        setSubmitted(true);
+        setFormData({ name: '', email: '', message: '' });
+        // @ts-ignore - debug field for debugging purposes
+        if (result.debug) {
+          console.log('Debug info:', result.debug);
+          // @ts-ignore
+          setDebugInfo(result.debug);
+        }
+      } else {
+        console.log('Failed with error:', result.error);
+        setError(result.error || 'Failed to send message. Please try again.');
       }
-    } else {
-      setError(result.error || 'Failed to send message. Please try again.');
+    } catch (err) {
+      console.error('Form submission error:', err);
+      setError('An unexpected error occurred. Please try again.');
     }
 
     setIsSubmitting(false);
