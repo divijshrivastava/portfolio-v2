@@ -119,10 +119,41 @@ jobs:
           VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
 
       - name: Deploy to Production
+        id: deploy
         run: |
           echo "🚀 Deploying to production..."
-          vercel deploy --prebuilt --prod --token=${{ secrets.VERCEL_TOKEN }}
-          echo "✅ Production deployment complete!"
+
+          # Deploy and capture the full output
+          DEPLOY_OUTPUT=$(vercel deploy --prebuilt --prod --token=${{ secrets.VERCEL_TOKEN }} 2>&1)
+          echo "$DEPLOY_OUTPUT"
+
+          # Extract deployment URL
+          DEPLOYMENT_URL=$(echo "$DEPLOY_OUTPUT" | grep -o 'https://[^[:space:]]*\.vercel\.app' | head -1)
+          PRODUCTION_URL=$(echo "$DEPLOY_OUTPUT" | grep "https://divij.tech" || echo "")
+
+          echo "Deployment URL: $DEPLOYMENT_URL"
+          echo "Production URL: $PRODUCTION_URL"
+
+          if [ -z "$DEPLOYMENT_URL" ]; then
+            echo "❌ Failed to create deployment"
+            exit 1
+          fi
+
+          # Wait for deployment to complete
+          echo "⏳ Waiting for deployment to complete..."
+          sleep 10
+
+          # Check if custom domain is aliased
+          if [ -z "$PRODUCTION_URL" ]; then
+            echo "⚠️ Custom domain not automatically aliased, aliasing manually..."
+            vercel alias set "$DEPLOYMENT_URL" divij.tech --token=${{ secrets.VERCEL_TOKEN }} --scope ${{ secrets.VERCEL_ORG_ID }}
+            echo "✅ Manually aliased to divij.tech"
+          else
+            echo "✅ Automatically aliased to divij.tech"
+          fi
+
+          echo "✅ Production deployment complete and promoted!"
+          echo "🌐 Live at: https://divij.tech"
         env:
           VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
           VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
