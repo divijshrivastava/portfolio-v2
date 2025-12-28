@@ -37,6 +37,9 @@ jobs:
     needs: check-ci-success
 
     steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
       - name: QA Deployment Notice
         run: |
           echo "🚀 QA Deployment Started"
@@ -47,15 +50,64 @@ jobs:
           echo "  - Domain: https://divij-qa.tech"
           echo "  - Project: portfolio-v2-qa"
           echo "  - Database: QA Supabase"
+          echo "  - Commit: ${{ github.sha }}"
           echo ""
           echo "⏳ Deployment typically takes 1-2 minutes"
           echo "📊 Monitor deployment at: https://vercel.com/dashboard"
 
-      - name: Wait for deployment window
+      - name: Wait and verify QA deployment
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          echo "⏳ Waiting for Vercel deployment to complete..."
-          sleep 120
-          echo "✅ QA deployment should be complete"
+          echo "⏳ Waiting for Vercel deployment to start..."
+          echo "Commit SHA: ${{ github.sha }}"
+
+          # Wait up to 5 minutes for deployment
+          MAX_WAIT=300
+          ELAPSED=0
+          SLEEP_INTERVAL=15
+          DEPLOYMENT_FOUND=false
+
+          while [ $ELAPSED -lt $MAX_WAIT ]; do
+            echo "[$ELAPSED/$MAX_WAIT seconds] Checking for deployment..."
+
+            # Check GitHub deployments API for this commit
+            DEPLOYMENTS=$(gh api \
+              /repos/${{ github.repository }}/deployments \
+              --jq ".[] | select(.sha == \"${{ github.sha }}\") | select(.environment == \"production\" or .environment == \"Production – portfolio-v2-qa\") | .id" \
+              2>/dev/null || echo "")
+
+            if [ -n "$DEPLOYMENTS" ]; then
+              echo "✅ Deployment found!"
+              DEPLOYMENT_ID=$(echo "$DEPLOYMENTS" | head -1)
+              echo "Deployment ID: $DEPLOYMENT_ID"
+
+              # Check deployment status
+              STATUS=$(gh api \
+                /repos/${{ github.repository }}/deployments/$DEPLOYMENT_ID/statuses \
+                --jq ".[0].state" \
+                2>/dev/null || echo "pending")
+
+              echo "Deployment status: $STATUS"
+
+              if [ "$STATUS" = "success" ]; then
+                echo "✅ QA deployment completed successfully!"
+                DEPLOYMENT_FOUND=true
+                break
+              elif [ "$STATUS" = "failure" ] || [ "$STATUS" = "error" ]; then
+                echo "❌ QA deployment failed!"
+                exit 1
+              fi
+            fi
+
+            sleep $SLEEP_INTERVAL
+            ELAPSED=$((ELAPSED + SLEEP_INTERVAL))
+          done
+
+          if [ "$DEPLOYMENT_FOUND" = false ]; then
+            echo "⚠️  WARNING: Could not verify deployment status within timeout"
+            echo "Proceeding anyway, but please manually verify QA deployment"
+          fi
 
       - name: QA Testing Instructions
         run: |
@@ -88,6 +140,9 @@ jobs:
       url: https://divij.tech
 
     steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
       - name: Production Deployment Approved
         run: |
           echo "✅ Production Deployment Approved"
@@ -99,16 +154,65 @@ jobs:
           echo "  - Domain: https://divij.tech"
           echo "  - Project: portfolio-v2"
           echo "  - Database: Production Supabase"
+          echo "  - Commit: ${{ github.sha }}"
           echo ""
           echo "⏳ Deployment typically takes 1-2 minutes"
           echo "📊 Monitor deployment at: https://vercel.com/dashboard"
 
-      - name: Wait for deployment window
+      - name: Wait and verify production deployment
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          echo ""
-          echo "⏳ Waiting for Vercel production deployment to complete..."
-          sleep 120
-          echo "✅ Production deployment should be complete"
+          echo "⏳ Waiting for Vercel production deployment to start..."
+          echo "Commit SHA: ${{ github.sha }}"
+
+          # Wait up to 5 minutes for deployment
+          MAX_WAIT=300
+          ELAPSED=0
+          SLEEP_INTERVAL=15
+          DEPLOYMENT_FOUND=false
+
+          while [ $ELAPSED -lt $MAX_WAIT ]; do
+            echo "[$ELAPSED/$MAX_WAIT seconds] Checking for deployment..."
+
+            # Check GitHub deployments API for this commit
+            DEPLOYMENTS=$(gh api \
+              /repos/${{ github.repository }}/deployments \
+              --jq ".[] | select(.sha == \"${{ github.sha }}\") | select(.environment == \"production\" or .environment == \"Production – portfolio-v2\") | .id" \
+              2>/dev/null || echo "")
+
+            if [ -n "$DEPLOYMENTS" ]; then
+              echo "✅ Deployment found!"
+              DEPLOYMENT_ID=$(echo "$DEPLOYMENTS" | head -1)
+              echo "Deployment ID: $DEPLOYMENT_ID"
+
+              # Check deployment status
+              STATUS=$(gh api \
+                /repos/${{ github.repository }}/deployments/$DEPLOYMENT_ID/statuses \
+                --jq ".[0].state" \
+                2>/dev/null || echo "pending")
+
+              echo "Deployment status: $STATUS"
+
+              if [ "$STATUS" = "success" ]; then
+                echo "✅ Production deployment completed successfully!"
+                DEPLOYMENT_FOUND=true
+                break
+              elif [ "$STATUS" = "failure" ] || [ "$STATUS" = "error" ]; then
+                echo "❌ Production deployment failed!"
+                exit 1
+              fi
+            fi
+
+            sleep $SLEEP_INTERVAL
+            ELAPSED=$((ELAPSED + SLEEP_INTERVAL))
+          done
+
+          if [ "$DEPLOYMENT_FOUND" = false ]; then
+            echo "❌ ERROR: Could not verify production deployment within timeout"
+            echo "Please check Vercel dashboard manually"
+            exit 1
+          fi
 
       - name: Deployment Summary
         run: |
