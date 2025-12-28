@@ -21,26 +21,58 @@ export async function generateMetadata({
 }: {
   params: Promise<{ slug: string }>
 }) {
-  const { slug } = await params;
-  const supabase = await createClient();
+  try {
+    const { slug } = await params;
+    const supabase = await createClient();
 
-  const { data: project } = await supabase
-    .from('projects')
-    .select('title, description')
-    .eq('slug', slug)
-    .eq('status', 'published')
-    .single();
+    const { data: project, error } = await supabase
+      .from('projects')
+      .select('title, description, image_url, youtube_url')
+      .eq('slug', slug)
+      .eq('status', 'published')
+      .single();
 
-  if (!project) {
+    if (error || !project) {
+      console.error('Metadata fetch error:', error);
+      return {
+        title: 'Project Not Found',
+      };
+    }
+
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://divij.tech';
+    const projectImage = getProjectImageUrl(project.image_url, project.youtube_url);
+    const ogImage = projectImage || `${baseUrl}/og-image.png`;
+
     return {
-      title: 'Project Not Found',
+      title: project.title,
+      description: project.description || project.title,
+      openGraph: {
+        title: project.title,
+        description: project.description || project.title,
+        type: 'article',
+        url: `${baseUrl}/projects/${slug}`,
+        images: [
+          {
+            url: ogImage,
+            width: 1200,
+            height: 630,
+            alt: project.title,
+          },
+        ],
+      },
+      twitter: {
+        card: 'summary_large_image',
+        title: project.title,
+        description: project.description || project.title,
+        images: [ogImage],
+      },
+    };
+  } catch (error) {
+    console.error('Metadata generation error:', error);
+    return {
+      title: 'Project',
     };
   }
-
-  return {
-    title: project.title,
-    description: project.description || project.title,
-  };
 }
 
 export default async function ProjectDetail({

@@ -14,41 +14,63 @@ export async function generateStaticParams() {
   return [];
 }
 
-// Temporarily disabled to debug Vercel 500 error
-// export async function generateMetadata({
-//   params
-// }: {
-//   params: Promise<{ slug: string }>
-// }) {
-//   try {
-//     const { slug } = await params;
-//     const supabase = await createClient();
+export async function generateMetadata({
+  params
+}: {
+  params: Promise<{ slug: string }>
+}) {
+  try {
+    const { slug } = await params;
+    const supabase = await createClient();
 
-//     const { data: blog, error } = await supabase
-//       .from('blogs')
-//       .select('title, summary')
-//       .eq('slug', slug)
-//       .eq('status', 'published')
-//       .single();
+    const { data: blog, error } = await supabase
+      .from('blogs')
+      .select('title, summary, cover_image_url')
+      .eq('slug', slug)
+      .eq('status', 'published')
+      .single();
 
-//     if (error || !blog) {
-//       console.error('Metadata fetch error:', error);
-//       return {
-//         title: 'Blog Not Found',
-//       };
-//     }
+    if (error || !blog) {
+      console.error('Metadata fetch error:', error);
+      return {
+        title: 'Blog Not Found',
+      };
+    }
 
-//     return {
-//       title: blog.title,
-//       description: blog.summary || blog.title,
-//     };
-//   } catch (error) {
-//     console.error('Metadata generation error:', error);
-//     return {
-//       title: 'Blog',
-//     };
-//   }
-// }
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://divij.tech';
+    const ogImage = blog.cover_image_url || `${baseUrl}/og-image.png`;
+
+    return {
+      title: blog.title,
+      description: blog.summary || blog.title,
+      openGraph: {
+        title: blog.title,
+        description: blog.summary || blog.title,
+        type: 'article',
+        url: `${baseUrl}/blog/${slug}`,
+        images: [
+          {
+            url: ogImage,
+            width: 1200,
+            height: 630,
+            alt: blog.title,
+          },
+        ],
+      },
+      twitter: {
+        card: 'summary_large_image',
+        title: blog.title,
+        description: blog.summary || blog.title,
+        images: [ogImage],
+      },
+    };
+  } catch (error) {
+    console.error('Metadata generation error:', error);
+    return {
+      title: 'Blog',
+    };
+  }
+}
 
 export default async function BlogPost({
   params
