@@ -11,6 +11,19 @@ This guide shows you how to manage DDL (Data Definition Language) changes safely
 
 ---
 
+## 🔍 Migration Tool Options
+
+This guide shows the **manual SQL approach**. For automated migration tracking, see:
+
+- **[SUPABASE-MIGRATIONS.md](./SUPABASE-MIGRATIONS.md)** - ⭐ **Recommended**: Supabase CLI with automatic tracking
+- **[MIGRATION-TOOLS-COMPARISON.md](./MIGRATION-TOOLS-COMPARISON.md)** - Compare Liquibase, Flyway, Prisma, and other tools
+
+**Quick Recommendation:**
+- **Use Supabase CLI** for automatic migration tracking and schema diff generation
+- **Use this manual guide** for simple one-off changes or learning purposes
+
+---
+
 ## 📋 Migration Workflow
 
 ```
@@ -455,6 +468,11 @@ SELECT * FROM public.schema_migrations ORDER BY applied_at DESC;
 
 ## 📚 Related Guides
 
+### Migration Tools
+- ⭐ [SUPABASE-MIGRATIONS.md](./SUPABASE-MIGRATIONS.md) - **Recommended**: Automated migration tracking with Supabase CLI
+- [MIGRATION-TOOLS-COMPARISON.md](./MIGRATION-TOOLS-COMPARISON.md) - Compare Liquibase, Flyway, Prisma, and other tools
+
+### Database & Deployment
 - [SYNC-DATABASES.md](./SYNC-DATABASES.md) - Sync production data to QA
 - [ENVIRONMENTS.md](./ENVIRONMENTS.md) - QA and Production workflow
 - [CICD-STRATEGY.md](./CICD-STRATEGY.md) - Complete CI/CD pipeline
