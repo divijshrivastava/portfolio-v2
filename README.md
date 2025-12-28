@@ -1,145 +1,153 @@
-# Portfolio V2
+# Portfolio V2 🚀
 
-A modern, production-ready portfolio website with automated CI/CD, dual-environment deployment (QA + Production), and comprehensive testing infrastructure.
+A production-grade personal portfolio website with blog, projects showcase, and admin dashboard — built with modern full-stack architecture, automated CI/CD, and comprehensive testing infrastructure.
 
-**Live Sites:**
-- Production: [divij.tech](https://divij.tech)
-- QA Environment: [divij-qa.tech](https://divij-qa.tech)
+🌐 **Live**: https://divij.tech
+🧪 **QA**: https://divij-qa.tech
 
-## Features
+⸻
 
-### Public Features
-- **Homepage** with introduction and featured sections
-- **Blog** with full WYSIWYG editor, markdown support, and image uploads
-- **Projects** showcase with multiple project types (website, YouTube, coding, etc.)
-- **About** page with skills and experience
-- **Contact** form with message storage
-- **Resume** viewer and download
+## TL;DR
 
-### Admin Features
-- Secure admin authentication with Supabase Auth
-- Blog management (create, edit, delete, approve/draft)
+This is my personal portfolio website built as a real-world full-stack product with authentication, admin tooling, dual QA/Production environments, automated database migrations, CI/CD pipelines, and comprehensive testing. Not just a static site — a production-ready application with proper DevOps practices.
+
+⸻
+
+## ✨ Features
+
+**Public Features**
+- Responsive portfolio website
+- Blog with rich text editor and markdown support
+- Projects showcase with multiple types
+- Contact form with message storage
+- Resume viewer and download
+- SEO-optimized pages
+
+**Admin Features**
+- Secure authentication with Supabase Auth
+- Blog management (create, edit, delete, draft/publish)
 - Project management (CRUD operations)
 - Message inbox from contact form
-- User activity tracking (IP addresses, pages visited)
+- User activity tracking
 - Resume upload and management
 - Dashboard with statistics
 
-## Tech Stack
+⸻
 
-### Core Technologies
-- **Frontend**: Next.js 14 (App Router), TypeScript, Tailwind CSS
-- **UI Components**: shadcn/ui
-- **Database**: Supabase (PostgreSQL)
-- **Authentication**: Supabase Auth
-- **File Storage**: Supabase Storage
-- **Hosting**: Vercel
-- **Rich Text Editor**: Tiptap
+## 🧱 Tech Stack
 
-### DevOps & Testing
-- **CI/CD**: GitHub Actions with automated workflows
-- **Environments**: QA (divij-qa.tech) + Production (divij.tech)
-- **Testing**: Vitest (unit), Playwright (e2e)
-- **Code Quality**: ESLint, TypeScript strict mode
-- **Security**: Trivy vulnerability scanning
-- **Database Migrations**: Automated Supabase migrations with approval gates
+**Frontend**
+- Next.js 14 (App Router)
+- TypeScript
+- Tailwind CSS
+- shadcn/ui components
 
-## Architecture
+**Backend & Services**
+- Supabase (PostgreSQL, Auth, Storage)
+- Server Actions / API Routes
+- Row Level Security (RLS)
 
-### Dual Environment Setup
+**Testing**
+- Vitest (unit tests)
+- Playwright (E2E tests)
 
+**DevOps & Tooling**
+- GitHub Actions (CI/CD)
+- Vercel (dual projects for QA + Production)
+- ESLint & TypeScript strict mode
+- Trivy (security scanning)
+- Automated database migrations
+
+⸻
+
+## 🏗 Architecture
+
+**Dual Environment Setup**
 ```
-GitHub Push → CI Tests → QA Deployment → Manual Approval → Production Deployment
-                ↓              ↓                              ↓
-            (7 minutes)  (divij-qa.tech)              (divij.tech)
+GitHub Push → CI Tests → QA Deploy → Manual Approval → Production Deploy
+                ↓            ↓                             ↓
+           (7 minutes)  (divij-qa.tech)             (divij.tech)
 ```
 
-**QA Environment:**
-- Automatic deployment on every push to `main`
-- Separate Supabase database for testing
-- Domain: divij-qa.tech
-- Purpose: Test changes before production
+- **QA Environment**: Auto-deploys on push to `main`, separate Supabase DB
+- **Production Environment**: Requires manual approval, production Supabase DB
+- **Database Migrations**: Auto-apply to QA → approve → auto-apply to Production
 
-**Production Environment:**
-- Requires manual approval via GitHub Actions
-- Production Supabase database
-- Domain: divij.tech
-- Purpose: Live user-facing site
+⸻
 
-### CI/CD Pipeline
+## 🔄 CI/CD Pipeline
 
 **On every push/PR:**
-1. Code quality checks (linting, formatting)
-2. Type checking (TypeScript)
-3. Unit tests (Vitest)
-4. Build verification
-5. E2E tests (Playwright)
-6. Security scanning (Trivy)
+- Linting and type-checking
+- Unit tests (Vitest)
+- Build verification
+- E2E tests (Playwright)
+- Security scanning (Trivy)
 
 **On merge to main:**
-1. All CI tests must pass
-2. Auto-deploy to QA environment
-3. Wait for manual approval
-4. Auto-deploy to Production after approval
+- All CI tests must pass (~7 minutes)
+- Auto-deploy to QA environment
+- Wait for manual approval
+- Auto-deploy to Production
 
-### Database Migrations
+**Database Migrations:**
+- Create migration in `supabase/migrations/`
+- Push to GitHub
+- Auto-apply to QA database
+- Test on divij-qa.tech
+- Approve in GitHub Actions
+- Auto-apply to Production database
 
-Automated migration workflow:
-1. Create migration file in `supabase/migrations/`
-2. Push to GitHub
-3. Migration automatically applied to QA database
-4. Test on divij-qa.tech
-5. Approve in GitHub Actions
-6. Migration applied to Production database
+⸻
 
-## Performance Features
+## 🧪 Testing
 
-- Server-Side Rendering (SSR) for dynamic content
-- Static Site Generation (SSG) for blog posts
-- Incremental Static Regeneration (ISR)
-- Next.js Image optimization (automatic WebP/AVIF)
-- Automatic code splitting
-- Edge Runtime middleware for auth
-- Mobile-first responsive design
-- Lighthouse Score: 95+
-
-## Cost
-
-**~$15/year** total:
-- Vercel Free Tier: $0 (2 projects, 100GB bandwidth/month each)
-- Supabase Free Tier: $0 (2 projects, 500MB database each, 1GB storage each)
-- divij.tech domain: ~$15/year
-- divij-qa.tech domain: ~$15/year (optional - using subdomain is free)
-
-## Quick Start
-
-### Prerequisites
-
-- Node.js 18+
-- npm or yarn
-- Git
-- A Supabase account (free tier)
-- A Vercel account (free tier)
-
-### Local Development Setup
-
-1. **Clone the repository:**
+**Run all tests**
 ```bash
+npm test
+```
+
+**Unit tests**
+```bash
+npm run test:unit
+```
+
+**E2E tests**
+```bash
+npx playwright install
+npm run test:e2e
+```
+
+**Type checking**
+```bash
+npm run type-check
+```
+
+⸻
+
+## 🛠 Local Development
+
+**Prerequisites**
+- Node.js 18+
+- Supabase account (free tier)
+- Vercel account (for deployment)
+
+**Setup**
+```bash
+# Clone and install
 git clone https://github.com/yourusername/portfolio-v2.git
 cd portfolio-v2
-```
-
-2. **Install dependencies:**
-```bash
 npm install
-```
 
-3. **Set up environment variables:**
-```bash
+# Environment variables
 cp .env.local.example .env.local
+# Edit .env.local with your Supabase credentials
+
+# Run development server
+npm run dev
 ```
 
-Edit `.env.local` and add your Supabase credentials:
+**Environment Variables**
 ```env
 NEXT_PUBLIC_SUPABASE_URL=https://xxxxx.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
@@ -147,9 +155,7 @@ SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
 NEXT_PUBLIC_APP_URL=http://localhost:3000
 ```
 
-4. **Set up Supabase:**
-
-Create a new Supabase project, then run the schema:
+**Database Setup**
 ```bash
 # Install Supabase CLI
 npm install -g supabase
@@ -161,289 +167,118 @@ supabase link --project-ref your-project-ref
 supabase db push
 ```
 
-Or manually run the SQL in `supabase-schema.sql` via Supabase SQL Editor.
-
-5. **Create storage buckets in Supabase:**
-   - `blog-images` (public)
-   - `project-images` (public)
-   - `profile-images` (public)
-   - `resumes` (public)
-
-6. **Create your admin user:**
-
-Sign up via the app, then run this SQL in Supabase:
+**Create Admin User**
 ```sql
 UPDATE public.profiles
 SET is_admin = true
 WHERE email = 'your-email@example.com';
 ```
 
-7. **Run the development server:**
-```bash
-npm run dev
-```
+⸻
 
-Open [http://localhost:3000](http://localhost:3000) to view the site.
+## 🚀 Deployment
 
-## Deployment
+**Production Setup**
+1. Create two Supabase projects (QA + Production)
+2. Create two Vercel projects (QA + Production)
+3. Configure GitHub Secrets and Environment
+4. Push to `main` branch
+5. Approve production deployment in GitHub Actions
 
-### Initial Production Setup
-
-1. **Create Supabase Projects:**
-   - Create QA Supabase project
-   - Create Production Supabase project
-   - Run schema on both
-   - Create storage buckets on both
-
-2. **Create Vercel Projects:**
-   - Create QA Vercel project (connects to QA Supabase)
-   - Create Production Vercel project (connects to Production Supabase)
-   - Both projects watch the `main` branch
-
-3. **Configure GitHub Secrets:**
-
-Go to GitHub → Settings → Secrets and add:
-```
-SUPABASE_ACCESS_TOKEN
-SUPABASE_QA_PROJECT_REF
-SUPABASE_PROD_PROJECT_REF
-VERCEL_TOKEN
-VERCEL_ORG_ID
-VERCEL_PROJECT_ID
-VERCEL_PROJECT_ID_QA
-```
-
-4. **Configure GitHub Environment:**
-   - Go to GitHub → Settings → Environments
-   - Create "Production" environment
-   - Add yourself as required reviewer
-   - Disable admin bypass (for proper approval workflow)
-
-5. **Deploy:**
-```bash
-git push origin main
-```
-
-This will:
-- Run all CI tests (~7 minutes)
-- Deploy to QA automatically
-- Wait for your approval
-- Deploy to Production after approval
-
-### Deployment Workflow
-
-**Normal feature development:**
-1. Create feature branch: `git checkout -b feature/my-feature`
-2. Make changes and test locally
-3. Create Pull Request
-4. CI tests run automatically
-5. Merge after CI passes and code review
-6. QA deploys automatically → test on divij-qa.tech
-7. Approve in GitHub Actions when ready
-8. Production deploys automatically → live on divij.tech
-
-**Emergency hotfix:**
-1. Create hotfix branch
-2. Fix and push
-3. CI runs (~7 minutes)
-4. Quick test on QA
-5. Immediate approval for production
-
-**Rollback:**
-- Go to Vercel dashboard
-- Find previous deployment
-- Click "Promote to Production"
+**Rollback**
+- Vercel dashboard → Previous deployment → "Promote to Production"
 - Rollback complete in ~30 seconds
 
-## Testing
+**Cost: ~$15/year**
+- Vercel Free Tier: $0 (2 projects)
+- Supabase Free Tier: $0 (2 projects)
+- Domain (divij.tech): ~$15/year
 
-### Run All Tests
-```bash
-npm test
-```
+⸻
 
-### Unit Tests
-```bash
-npm run test:unit
-```
-
-### E2E Tests
-```bash
-# Install browsers (first time only)
-npx playwright install
-
-# Run E2E tests
-npm run test:e2e
-```
-
-### Type Checking
-```bash
-npm run type-check
-```
-
-### Linting
-```bash
-npm run lint
-```
-
-## Project Structure
+## 📁 Project Structure
 
 ```
 portfolio-v2/
-├── app/                      # Next.js app directory
-│   ├── (public pages)/       # Blog, Projects, About, Contact, Resume
-│   ├── admin/                # Admin dashboard and management
-│   ├── api/                  # API routes
-│   └── login/                # Admin login
-├── components/               # React components
-│   ├── ui/                   # shadcn/ui components
-│   ├── layout/               # Navigation, Footer
-│   ├── blog/                 # Blog-specific components
-│   ├── projects/             # Project components
-│   └── admin/                # Admin components
-├── lib/                      # Utility functions
-│   ├── supabase/             # Supabase clients (browser, server, admin)
-│   └── utils.ts              # Helper functions
+├── app/                    # Next.js app directory
+│   ├── (public pages)/     # Blog, Projects, About, Contact
+│   ├── admin/              # Admin dashboard
+│   ├── api/                # API routes
+│   └── login/              # Auth
+├── components/             # React components
+│   ├── ui/                 # shadcn/ui components
+│   └── admin/              # Admin components
+├── lib/
+│   ├── supabase/           # Supabase clients
+│   └── utils.ts            # Helpers
 ├── supabase/
-│   └── migrations/           # Database migration files
+│   └── migrations/         # Database migrations
 ├── .github/
-│   └── workflows/            # CI/CD workflows
-│       ├── ci.yml            # Test pipeline
-│       ├── deploy-qa-prod.yml # Deployment pipeline
-│       └── migrate-databases.yml # Database migrations
-├── tests/
-│   ├── unit/                 # Vitest unit tests
-│   └── e2e/                  # Playwright E2E tests
-└── public/                   # Static assets
+│   └── workflows/          # CI/CD pipelines
+└── tests/
+    ├── unit/               # Vitest tests
+    └── e2e/                # Playwright tests
 ```
 
-## Admin Access
+⸻
 
-1. Go to `/login`
-2. Sign in with your admin credentials
-3. Access the admin dashboard at `/admin`
+## 🔒 Security
 
-**Admin Features:**
-- Dashboard with visitor stats and recent activity
-- Blog management (create, edit, delete, draft/publish)
-- Project management (CRUD operations)
-- Message inbox from contact form
-- Resume upload and management
+- Row Level Security (RLS) on all Supabase tables
+- Admin-only access to sensitive data
+- Environment variables for secrets
+- Automated security scanning in CI
+- Edge Runtime for fast, secure middleware
 
-## Database Migrations
+⸻
 
-Create a new migration:
-```bash
-# Create migration file
-supabase migration new your_migration_name
+## 📊 Performance
 
-# Edit the file in supabase/migrations/
-# Add your SQL changes
+- Server-Side Rendering (SSR)
+- Static Site Generation (SSG)
+- Incremental Static Regeneration (ISR)
+- Next.js Image optimization
+- Automatic code splitting
+- Lighthouse Score: 95+
 
-# Test locally
-supabase db push
+⸻
 
-# Commit and push to GitHub
-git add .
-git commit -m "feat: add your_migration_name"
-git push origin main
-```
+## 🗺 Roadmap
 
-The migration will:
-1. Apply to QA database automatically
-2. Wait for your approval in GitHub Actions
-3. Apply to Production database after approval
+- [ ] Email notifications for contact form
+- [ ] Analytics dashboard
+- [ ] Dark mode
+- [ ] Blog categories and tags
+- [ ] Search functionality
 
-## Security
+⸻
 
-- **Row Level Security (RLS)** enabled on all Supabase tables
-- **Admin-only access** to sensitive data and management features
-- **Secure authentication** with Supabase Auth (email + password)
-- **Environment variables** for all sensitive keys
-- **Automated security scanning** with Trivy in CI pipeline
-- **Edge Runtime** for fast, secure middleware
-- **CORS protection** on API routes
+## 👤 About
 
-## Environment Variables
+Built by **Divij Shrivastava** — a full-stack developer focused on building scalable, production-ready systems with clean architecture and strong engineering practices.
 
-Required environment variables:
+⸻
 
-```env
-# Supabase
-NEXT_PUBLIC_SUPABASE_URL=https://xxxxx.supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
-SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
+## 🤝 Contributing
 
-# App
-NEXT_PUBLIC_APP_URL=https://yourdomain.com
-NEXTAUTH_URL=https://yourdomain.com
-NEXTAUTH_SECRET=generate-random-secret
+This is a personal portfolio project, but feel free to fork it, explore the codebase, or open an issue if you spot improvements.
 
-# Optional: Email notifications
-SMTP_HOST=smtp.gmail.com
-SMTP_PORT=587
-SMTP_USER=your-email@gmail.com
-SMTP_PASS=your-app-password
-```
+⸻
 
-## Monitoring & Debugging
-
-- **Vercel Logs**: Real-time logs in Vercel dashboard
-- **Supabase Logs**: Database query logs and errors
-- **GitHub Actions**: CI/CD pipeline logs
-- **Health Endpoint**: `/api/health` for uptime monitoring
-
-## Customization
-
-### Colors and Styling
-Edit `tailwind.config.ts` and `app/globals.css` to customize colors and styles.
-
-### Content
-- Update the About page: `app/about/page.tsx`
-- Change social links: `components/layout/footer.tsx`
-- Modify homepage: `app/page.tsx`
-
-### Blog Configuration
-- Edit blog metadata in blog post frontmatter
-- Customize editor in `components/admin/blog/BlogEditor.tsx`
-
-## Troubleshooting
-
-### Build Failures
-- Check Vercel deployment logs
-- Verify all environment variables are set
-- Run `npm run build` locally to reproduce
-
-### Database Connection Issues
-- Verify Supabase credentials in `.env.local`
-- Check Supabase project is active (not paused)
-- Verify RLS policies are correct
-
-### Admin Access Issues
-- Verify `is_admin = true` in profiles table
-- Check auth session is valid
-- Clear browser cache and re-login
-
-## Contributing
-
-This is a personal portfolio project, but feel free to fork and customize for your own use!
-
-## License
+## 📄 License
 
 MIT License - feel free to use this for your own portfolio!
 
-## Credits
+⸻
+
+## 🙏 Credits
 
 Built with:
 - [Next.js](https://nextjs.org/) - React framework
 - [Supabase](https://supabase.com/) - Backend as a Service
-- [Tailwind CSS](https://tailwindcss.com/) - Utility-first CSS
-- [shadcn/ui](https://ui.shadcn.com/) - UI component library
-- [Tiptap](https://tiptap.dev/) - Headless rich text editor
-- [Vercel](https://vercel.com/) - Deployment platform
-- [Vitest](https://vitest.dev/) - Unit testing framework
-- [Playwright](https://playwright.dev/) - E2E testing framework
-
----
-
-**Made with ❤️ by Divij Shrivastava**
+- [Tailwind CSS](https://tailwindcss.com/) - Styling
+- [shadcn/ui](https://ui.shadcn.com/) - UI components
+- [Tiptap](https://tiptap.dev/) - Rich text editor
+- [Vercel](https://vercel.com/) - Hosting
+- [Vitest](https://vitest.dev/) - Unit testing
+- [Playwright](https://playwright.dev/) - E2E testing
