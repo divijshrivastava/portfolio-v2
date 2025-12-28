@@ -23,7 +23,7 @@ const qaSupabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY_QA || process.env.SUPABASE_SERVICE_ROLE_KEY || ''
 );
 
-const TABLES = ['profiles', 'projects', 'blogs', 'messages'];
+const TABLES = ['profiles', 'projects', 'blogs', 'messages', 'resume'];
 
 async function syncTable(tableName) {
   console.log(`\n📦 Syncing table: ${tableName}`);
