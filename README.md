@@ -13,6 +13,22 @@ This is my personal portfolio website built as a real-world full-stack product w
 
 ⸻
 
+## 📸 Screenshots
+
+### Homepage
+![Homepage](.github/screenshots/homepage.png)
+
+### Blog
+![Blog](.github/screenshots/blog.png)
+
+### Projects
+![Projects](.github/screenshots/projects.png)
+
+### Admin Dashboard
+![Admin Dashboard](.github/screenshots/admin-dashboard.png)
+
+⸻
+
 ## ✨ Features
 
 **Public Features**
