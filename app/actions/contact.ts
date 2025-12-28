@@ -249,17 +249,25 @@ export async function submitContactForm(formData: ContactFormData) {
     }
 
     // Update rate limit
+    let rateLimitDebug = '';
     try {
       await updateRateLimit(ipAddress);
-    } catch (rateLimitError) {
+      rateLimitDebug = 'Rate limit updated successfully';
+    } catch (rateLimitError: any) {
       // Log the error but don't fail the submission
       // Message was already saved successfully
       console.error('Rate limit update failed:', rateLimitError);
+      rateLimitDebug = `Rate limit update failed: ${rateLimitError.message}`;
     }
 
     return {
       success: true,
       message: 'Message sent successfully!',
+      debug: {
+        ipAddress,
+        hasServiceKey: !!process.env.SUPABASE_SERVICE_ROLE_KEY,
+        rateLimitDebug,
+      },
     };
   } catch (error) {
     console.error('Contact form error:', error);
