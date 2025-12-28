@@ -5,7 +5,7 @@
 
 -- Create rate_limits table
 CREATE TABLE IF NOT EXISTS public.rate_limits (
-  id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   ip_address TEXT NOT NULL,
   action_type TEXT NOT NULL, -- 'contact_form', 'blog_view', etc.
   attempt_count INTEGER DEFAULT 1,
