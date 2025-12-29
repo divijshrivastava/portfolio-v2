@@ -44,10 +44,17 @@ export async function generateMetadata({
 
     // Ensure image URL is absolute for social media crawlers
     let ogImage = `${baseUrl}/og-image.png`; // Default fallback (1200x630)
-    if (projectImage) {
+    if (projectImage && projectImage.trim()) {
       // If URL is already absolute (starts with http:// or https://), use it
       // Otherwise, treat it as relative and prepend baseUrl
-      ogImage = projectImage.startsWith('http') ? projectImage : `${baseUrl}${projectImage}`;
+      // Ensure relative paths start with /
+      if (projectImage.startsWith('http://') || projectImage.startsWith('https://')) {
+        ogImage = projectImage;
+      } else {
+        // Ensure relative path starts with /
+        const relativePath = projectImage.startsWith('/') ? projectImage : `/${projectImage}`;
+        ogImage = `${baseUrl}${relativePath}`;
+      }
     }
 
     return {
@@ -61,6 +68,8 @@ export async function generateMetadata({
         images: [
           {
             url: ogImage,
+            width: 1200,
+            height: 630,
             alt: project.title,
           },
         ],
