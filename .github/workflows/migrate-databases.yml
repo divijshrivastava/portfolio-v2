@@ -83,27 +83,6 @@ jobs:
         env:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
 
-      - name: Repair migration history if needed
-        run: |
-          echo "🔍 Checking migration history..."
-          # Check migration status
-          MIGRATION_OUTPUT=$(supabase migration list 2>&1 || true)
-          echo "$MIGRATION_OUTPUT"
-          
-          # If there are remote migrations not in local, repair them
-          if echo "$MIGRATION_OUTPUT" | grep -q "Remote migration versions not found"; then
-            echo "⚠️  Migration history mismatch detected - repairing..."
-            # Repair the specific migrations mentioned in the error
-            supabase migration repair --status applied 20251228073842 || true
-            supabase migration repair --status applied 20251228074803 || true
-            supabase migration repair --status applied 20251228081402 || true
-            supabase migration repair --status applied 20251228083222 || true
-            echo "✅ Migration history repaired"
-          fi
-        env:
-          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
-          SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_PROD_DB_PASSWORD }}
-        continue-on-error: true
 
       - name: Apply migrations to Production
         run: |
