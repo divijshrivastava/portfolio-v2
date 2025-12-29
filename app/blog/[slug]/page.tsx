@@ -25,7 +25,7 @@ export async function generateMetadata({
 
     const { data: blog, error } = await supabase
       .from('blogs')
-      .select('title, summary, cover_image_url')
+      .select('title, summary, cover_image_url, og_image_url')
       .eq('slug', slug)
       .eq('status', 'published')
       .single();
@@ -39,12 +39,19 @@ export async function generateMetadata({
 
     const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://divij.tech';
 
-    // Ensure image URL is absolute for social media crawlers
+    // Prefer optimized OG image if available, otherwise use cover image
     let ogImage = `${baseUrl}/og-image.png`; // Default fallback (1200x630)
-    if (blog.cover_image_url) {
-      // If URL is already absolute (starts with http:// or https://), use it
-      // Otherwise, treat it as relative and prepend baseUrl
-      ogImage = blog.cover_image_url.startsWith('http') ? blog.cover_image_url : `${baseUrl}${blog.cover_image_url}`;
+    
+    if (blog.og_image_url && blog.og_image_url.trim()) {
+      // Use optimized OG image if available
+      ogImage = blog.og_image_url.startsWith('http') 
+        ? blog.og_image_url 
+        : `${baseUrl}${blog.og_image_url.startsWith('/') ? blog.og_image_url : `/${blog.og_image_url}`}`;
+    } else if (blog.cover_image_url) {
+      // Fallback to cover image
+      ogImage = blog.cover_image_url.startsWith('http') 
+        ? blog.cover_image_url 
+        : `${baseUrl}${blog.cover_image_url.startsWith('/') ? blog.cover_image_url : `/${blog.cover_image_url}`}`;
     }
 
     return {

@@ -27,7 +27,7 @@ export async function generateMetadata({
 
     const { data: project, error } = await supabase
       .from('projects')
-      .select('title, description, image_url, youtube_url')
+      .select('title, description, image_url, youtube_url, og_image_url')
       .eq('slug', slug)
       .eq('status', 'published')
       .single();
@@ -40,20 +40,25 @@ export async function generateMetadata({
     }
 
     const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://divij.tech';
-    const projectImage = getProjectImageUrl(project.image_url, project.youtube_url);
-
-    // Ensure image URL is absolute for social media crawlers
+    
+    // Prefer optimized OG image if available, otherwise use regular image
     let ogImage = `${baseUrl}/og-image.png`; // Default fallback (1200x630)
-    if (projectImage && projectImage.trim()) {
-      // If URL is already absolute (starts with http:// or https://), use it
-      // Otherwise, treat it as relative and prepend baseUrl
-      // Ensure relative paths start with /
-      if (projectImage.startsWith('http://') || projectImage.startsWith('https://')) {
-        ogImage = projectImage;
-      } else {
-        // Ensure relative path starts with /
-        const relativePath = projectImage.startsWith('/') ? projectImage : `/${projectImage}`;
-        ogImage = `${baseUrl}${relativePath}`;
+    
+    if (project.og_image_url && project.og_image_url.trim()) {
+      // Use optimized OG image if available
+      ogImage = project.og_image_url.startsWith('http') 
+        ? project.og_image_url 
+        : `${baseUrl}${project.og_image_url.startsWith('/') ? project.og_image_url : `/${project.og_image_url}`}`;
+    } else {
+      // Fallback to regular image
+      const projectImage = getProjectImageUrl(project.image_url, project.youtube_url);
+      if (projectImage && projectImage.trim()) {
+        if (projectImage.startsWith('http://') || projectImage.startsWith('https://')) {
+          ogImage = projectImage;
+        } else {
+          const relativePath = projectImage.startsWith('/') ? projectImage : `/${projectImage}`;
+          ogImage = `${baseUrl}${relativePath}`;
+        }
       }
     }
 

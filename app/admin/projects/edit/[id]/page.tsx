@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { createClient } from '@/lib/supabase/client';
+import { optimizeImageOnPublish } from '@/lib/utils/optimize-publish-image';
 import { ArrowLeft, Save, Eye, Trash2 } from 'lucide-react';
 import Link from 'next/link';
 
@@ -173,6 +174,13 @@ export default function EditProjectPage({ params }: any) {
 
     const supabase = createClient();
 
+    // Optimize image if publishing and image exists
+    let ogImageUrl: string | null = null;
+    const isPublishing = newStatus === 'published' && status === 'draft';
+    if (isPublishing && imageUrl) {
+      ogImageUrl = await optimizeImageOnPublish(imageUrl, 'project-images');
+    }
+
     // Parse tech stack from comma-separated string to array
     const techStackArray = techStack
       ? techStack.split(',').map(t => t.trim()).filter(Boolean)
@@ -185,6 +193,7 @@ export default function EditProjectPage({ params }: any) {
         slug,
         description,
         image_url: imageUrl,
+        og_image_url: ogImageUrl,
         project_url: projectUrl || null,
         github_url: githubUrl || null,
         youtube_url: youtubeUrl || null,
