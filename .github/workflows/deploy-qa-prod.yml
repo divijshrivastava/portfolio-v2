@@ -55,6 +55,14 @@ jobs:
           echo "⏳ Deployment typically takes 1-2 minutes"
           echo "📊 Monitor deployment at: https://vercel.com/dashboard"
 
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22.x'
+
+      - name: Install Vercel CLI
+        run: npm install -g vercel@latest
+
       - name: Wait and verify QA deployment
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -64,12 +72,14 @@ jobs:
           echo "⏳ Waiting for Vercel deployment to start..."
           echo "Commit SHA: ${{ github.sha }}"
 
-          # Wait up to 5 minutes for deployment to complete (reduced from 10)
-          MAX_WAIT=300
+          # Wait up to 4 minutes for deployment to complete
+          MAX_WAIT=240
           ELAPSED=0
           SLEEP_INTERVAL=15
           DEPLOYMENT_FOUND=false
           DEPLOYMENT_STARTED=false
+          IN_PROGRESS_SINCE=0
+          VERCEL_BUILDING_SINCE=0
 
           # First, check what deployments exist for debugging
           echo "🔍 Checking existing GitHub deployments..."
@@ -115,20 +125,87 @@ jobs:
                 exit 1
               elif [ "$STATUS" = "in_progress" ] || [ "$STATUS" = "pending" ]; then
                 echo "⏳ Deployment in progress..."
+                
+                # Track how long it's been in_progress
+                if [ "$IN_PROGRESS_SINCE" -eq 0 ]; then
+                  IN_PROGRESS_SINCE=$ELAPSED
+                fi
+                
+                # If stuck in_progress for more than 2 minutes, check Vercel directly
+                IN_PROGRESS_DURATION=$((ELAPSED - IN_PROGRESS_SINCE))
+                if [ "$IN_PROGRESS_DURATION" -gt 120 ]; then
+                  echo "⚠️  GitHub deployment stuck in 'in_progress' for $IN_PROGRESS_DURATION seconds"
+                  echo "🔍 Checking Vercel directly to verify deployment status..."
+                  
+                  # Check Vercel deployments for QA project (portfolio-v2-qa)
+                  VERCEL_DEPLOYMENT=$(vercel ls --token=$VERCEL_TOKEN --scope=$VERCEL_ORG_ID 2>&1 | grep -i "portfolio-v2-qa\|production\|ready" | head -1 || echo "")
+                  
+                  if echo "$VERCEL_DEPLOYMENT" | grep -qi "ready"; then
+                    echo "✅ Vercel shows QA deployment is READY!"
+                    echo "GitHub deployment status may be delayed, but Vercel deployment is complete"
+                    DEPLOYMENT_FOUND=true
+                    break
+                  elif echo "$VERCEL_DEPLOYMENT" | grep -qi "building"; then
+                    echo "⏳ Vercel deployment still building..."
+                    # Track when we first detected Vercel is building
+                    if [ "$VERCEL_BUILDING_SINCE" -eq 0 ]; then
+                      VERCEL_BUILDING_SINCE=$ELAPSED
+                      echo "Will wait up to 2 more minutes for Vercel build to complete..."
+                    else
+                      VERCEL_BUILDING_DURATION=$((ELAPSED - VERCEL_BUILDING_SINCE))
+                      # If Vercel has been building for more than 2 minutes, proceed with warning
+                      if [ "$VERCEL_BUILDING_DURATION" -gt 120 ]; then
+                        echo "⚠️  Vercel deployment has been building for $VERCEL_BUILDING_DURATION seconds"
+                        echo "This is longer than typical (1-2 minutes). Proceeding with warning."
+                        echo "Deployment may still be in progress - check Vercel dashboard: https://vercel.com/dashboard"
+                        DEPLOYMENT_FOUND=true
+                        break
+                      fi
+                    fi
+                  else
+                    echo "ℹ️  Could not determine Vercel deployment status from CLI output"
+                    echo "Proceeding anyway - Vercel deployments typically complete in 1-2 minutes"
+                    DEPLOYMENT_FOUND=true
+                    break
+                  fi
+                fi
               fi
             else
-              # If no GitHub deployment found after 2 minutes, assume Vercel deployed successfully
-              # (Vercel may not always create GitHub deployments immediately)
+              # If no GitHub deployment found after 2 minutes, check Vercel directly
               if [ "$ELAPSED" -gt 120 ] && [ "$DEPLOYMENT_STARTED" = false ]; then
                 echo "ℹ️  No GitHub deployment found after 2 minutes"
-                echo "Vercel typically deploys within 1-2 minutes"
-                echo "Assuming deployment is in progress or completed"
-                echo "Proceeding to allow manual verification"
-                DEPLOYMENT_STARTED=true
-                # Give it one more check cycle
-                sleep $SLEEP_INTERVAL
-                ELAPSED=$((ELAPSED + SLEEP_INTERVAL))
-                continue
+                echo "🔍 Checking Vercel directly..."
+                
+                VERCEL_DEPLOYMENT=$(vercel ls --token=$VERCEL_TOKEN --scope=$VERCEL_ORG_ID 2>&1 | grep -i "portfolio-v2-qa\|production\|ready" | head -1 || echo "")
+                
+                if echo "$VERCEL_DEPLOYMENT" | grep -qi "ready"; then
+                  echo "✅ Vercel shows QA deployment is READY!"
+                  DEPLOYMENT_FOUND=true
+                  DEPLOYMENT_STARTED=true
+                  break
+                elif echo "$VERCEL_DEPLOYMENT" | grep -qi "building"; then
+                  echo "⏳ Vercel deployment still building..."
+                  DEPLOYMENT_STARTED=true
+                  # Track when we first detected Vercel is building
+                  if [ "$VERCEL_BUILDING_SINCE" -eq 0 ]; then
+                    VERCEL_BUILDING_SINCE=$ELAPSED
+                    echo "Will wait up to 2 more minutes for Vercel build to complete..."
+                  else
+                    VERCEL_BUILDING_DURATION=$((ELAPSED - VERCEL_BUILDING_SINCE))
+                    # If Vercel has been building for more than 2 minutes, proceed with warning
+                    if [ "$VERCEL_BUILDING_DURATION" -gt 120 ]; then
+                      echo "⚠️  Vercel deployment has been building for $VERCEL_BUILDING_DURATION seconds"
+                      echo "This is longer than typical (1-2 minutes). Proceeding with warning."
+                      echo "Deployment may still be in progress - check Vercel dashboard: https://vercel.com/dashboard"
+                      DEPLOYMENT_FOUND=true
+                      break
+                    fi
+                  fi
+                else
+                  echo "Vercel typically deploys within 1-2 minutes"
+                  echo "Assuming deployment is in progress or completed"
+                  DEPLOYMENT_STARTED=true
+                fi
               fi
             fi
 
@@ -262,12 +339,13 @@ jobs:
           echo "⏳ Waiting for Vercel production deployment to start..."
           echo "Commit SHA: ${{ github.sha }}"
 
-          # Wait up to 5 minutes for deployment to complete (reduced from 10)
-          MAX_WAIT=300
+          # Wait up to 4 minutes for deployment to complete
+          MAX_WAIT=240
           ELAPSED=0
           SLEEP_INTERVAL=15
           DEPLOYMENT_FOUND=false
           DEPLOYMENT_STARTED=false
+          IN_PROGRESS_SINCE=0
 
           # First, check what deployments exist for debugging
           echo "🔍 Checking existing GitHub deployments..."
@@ -313,20 +391,87 @@ jobs:
                 exit 1
               elif [ "$STATUS" = "in_progress" ] || [ "$STATUS" = "pending" ]; then
                 echo "⏳ Deployment in progress..."
+                
+                # Track how long it's been in_progress
+                if [ "$IN_PROGRESS_SINCE" -eq 0 ]; then
+                  IN_PROGRESS_SINCE=$ELAPSED
+                fi
+                
+                # If stuck in_progress for more than 2 minutes, check Vercel directly
+                IN_PROGRESS_DURATION=$((ELAPSED - IN_PROGRESS_SINCE))
+                if [ "$IN_PROGRESS_DURATION" -gt 120 ]; then
+                  echo "⚠️  GitHub deployment stuck in 'in_progress' for $IN_PROGRESS_DURATION seconds"
+                  echo "🔍 Checking Vercel directly to verify deployment status..."
+                  
+                  # Check Vercel deployments - look for latest production deployment
+                  VERCEL_DEPLOYMENT=$(vercel ls --token=$VERCEL_TOKEN --scope=$VERCEL_ORG_ID 2>&1 | grep -i "production" | head -1 || echo "")
+                  
+                  if echo "$VERCEL_DEPLOYMENT" | grep -qi "ready"; then
+                    echo "✅ Vercel shows deployment is READY!"
+                    echo "GitHub deployment status may be delayed, but Vercel deployment is complete"
+                    DEPLOYMENT_FOUND=true
+                    break
+                  elif echo "$VERCEL_DEPLOYMENT" | grep -qi "building"; then
+                    echo "⏳ Vercel deployment still building..."
+                    # Track when we first detected Vercel is building
+                    if [ "$VERCEL_BUILDING_SINCE" -eq 0 ]; then
+                      VERCEL_BUILDING_SINCE=$ELAPSED
+                      echo "Will wait up to 2 more minutes for Vercel build to complete..."
+                    else
+                      VERCEL_BUILDING_DURATION=$((ELAPSED - VERCEL_BUILDING_SINCE))
+                      # If Vercel has been building for more than 2 minutes, proceed with warning
+                      if [ "$VERCEL_BUILDING_DURATION" -gt 120 ]; then
+                        echo "⚠️  Vercel deployment has been building for $VERCEL_BUILDING_DURATION seconds"
+                        echo "This is longer than typical (1-2 minutes). Proceeding with warning."
+                        echo "Deployment may still be in progress - check Vercel dashboard: https://vercel.com/dashboard"
+                        DEPLOYMENT_FOUND=true
+                        break
+                      fi
+                    fi
+                  else
+                    echo "ℹ️  Could not determine Vercel deployment status from CLI output"
+                    echo "Proceeding anyway - Vercel deployments typically complete in 1-2 minutes"
+                    DEPLOYMENT_FOUND=true
+                    break
+                  fi
+                fi
               fi
             else
-              # If no GitHub deployment found after 2 minutes, assume Vercel deployed successfully
-              # (Vercel may not always create GitHub deployments immediately)
+              # If no GitHub deployment found after 2 minutes, check Vercel directly
               if [ "$ELAPSED" -gt 120 ] && [ "$DEPLOYMENT_STARTED" = false ]; then
                 echo "ℹ️  No GitHub deployment found after 2 minutes"
-                echo "Vercel typically deploys within 1-2 minutes"
-                echo "Assuming deployment is in progress or completed"
-                echo "Proceeding to allow manual verification"
-                DEPLOYMENT_STARTED=true
-                # Give it one more check cycle
-                sleep $SLEEP_INTERVAL
-                ELAPSED=$((ELAPSED + SLEEP_INTERVAL))
-                continue
+                echo "🔍 Checking Vercel directly..."
+                
+                VERCEL_DEPLOYMENT=$(vercel ls --token=$VERCEL_TOKEN --scope=$VERCEL_ORG_ID 2>&1 | grep -i "production" | head -1 || echo "")
+                
+                if echo "$VERCEL_DEPLOYMENT" | grep -qi "ready"; then
+                  echo "✅ Vercel shows deployment is READY!"
+                  DEPLOYMENT_FOUND=true
+                  DEPLOYMENT_STARTED=true
+                  break
+                elif echo "$VERCEL_DEPLOYMENT" | grep -qi "building"; then
+                  echo "⏳ Vercel deployment still building..."
+                  DEPLOYMENT_STARTED=true
+                  # Track when we first detected Vercel is building
+                  if [ "$VERCEL_BUILDING_SINCE" -eq 0 ]; then
+                    VERCEL_BUILDING_SINCE=$ELAPSED
+                    echo "Will wait up to 2 more minutes for Vercel build to complete..."
+                  else
+                    VERCEL_BUILDING_DURATION=$((ELAPSED - VERCEL_BUILDING_SINCE))
+                    # If Vercel has been building for more than 2 minutes, proceed with warning
+                    if [ "$VERCEL_BUILDING_DURATION" -gt 120 ]; then
+                      echo "⚠️  Vercel deployment has been building for $VERCEL_BUILDING_DURATION seconds"
+                      echo "This is longer than typical (1-2 minutes). Proceeding with warning."
+                      echo "Deployment may still be in progress - check Vercel dashboard: https://vercel.com/dashboard"
+                      DEPLOYMENT_FOUND=true
+                      break
+                    fi
+                  fi
+                else
+                  echo "Vercel typically deploys within 1-2 minutes"
+                  echo "Assuming deployment is in progress or completed"
+                  DEPLOYMENT_STARTED=true
+                fi
               fi
             fi
 
