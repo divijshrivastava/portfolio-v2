@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { optimizeImageForOG, downloadImage } from '@/lib/utils/image-optimization';
-import { createClient: createServiceClient } from '@supabase/supabase-js';
 
 export async function PUT(
   request: NextRequest,
@@ -44,6 +43,7 @@ export async function PUT(
             const optimizedPath = `${baseName}-og.webp`;
             
             // Upload optimized image
+            const { createClient: createServiceClient } = await import('@supabase/supabase-js');
             const serviceClient = createServiceClient(
               process.env.NEXT_PUBLIC_SUPABASE_URL!,
               process.env.SUPABASE_SERVICE_ROLE_KEY!,
