@@ -187,8 +187,8 @@ jobs:
         run: |
           echo "🔍 Finding deployment for commit ${{ github.sha }}..."
 
-          # Get list of deployments for this project
-          DEPLOYMENTS=$(vercel ls --token=$VERCEL_TOKEN 2>&1)
+          # Get list of deployments for this project with proper team scope
+          DEPLOYMENTS=$(vercel ls --token=$VERCEL_TOKEN --scope=$VERCEL_ORG_ID 2>&1)
 
           echo "Recent deployments:"
           echo "$DEPLOYMENTS"
@@ -206,8 +206,8 @@ jobs:
             echo "❌ Could not find deployment URL"
             echo "Attempting to get latest deployment..."
 
-            # Alternative: get the latest deployment
-            DEPLOYMENT_URL=$(vercel ls --token=$VERCEL_TOKEN 2>&1 | grep -o 'https://[^ ]*vercel.app' | head -1)
+            # Alternative: get the latest deployment with proper scope
+            DEPLOYMENT_URL=$(vercel ls --token=$VERCEL_TOKEN --scope=$VERCEL_ORG_ID 2>&1 | grep -o 'https://[^ ]*vercel.app' | head -1)
           fi
 
           if [ -n "$DEPLOYMENT_URL" ]; then
@@ -215,7 +215,7 @@ jobs:
             echo ""
             echo "🚀 Promoting to production..."
 
-            vercel promote "$DEPLOYMENT_URL" --token=$VERCEL_TOKEN --yes
+            vercel promote "$DEPLOYMENT_URL" --token=$VERCEL_TOKEN --scope=$VERCEL_ORG_ID --yes
 
             echo ""
             echo "✅ Deployment promoted successfully!"
