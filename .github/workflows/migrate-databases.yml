@@ -34,7 +34,7 @@ jobs:
           supabase migration list
           echo ""
           echo "🔄 Applying migrations to QA..."
-          echo "y" | supabase db push
+          echo "y" | supabase db push --include-all
         env:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
           SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_QA_DB_PASSWORD }}
@@ -90,7 +90,7 @@ jobs:
           supabase migration list
           echo ""
           echo "🚀 Applying migrations to PRODUCTION..."
-          echo "y" | supabase db push
+          echo "y" | supabase db push --include-all
         env:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
           SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_PROD_DB_PASSWORD }}
