@@ -160,7 +160,7 @@ jobs:
           echo "✅ Production Deployment Approved"
           echo "=================================="
           echo ""
-          echo "🚀 Vercel is automatically deploying to production environment"
+          echo "🚀 Promoting Vercel deployment to production"
           echo ""
           echo "Production Environment:"
           echo "  - Domain: https://divij.tech"
@@ -168,8 +168,62 @@ jobs:
           echo "  - Database: Production Supabase"
           echo "  - Commit: ${{ github.sha }}"
           echo ""
-          echo "⏳ Deployment typically takes 1-2 minutes"
+          echo "⏳ Promotion typically takes 30-60 seconds"
           echo "📊 Monitor deployment at: https://vercel.com/dashboard"
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22.x'
+
+      - name: Install Vercel CLI
+        run: npm install -g vercel@latest
+
+      - name: Promote deployment to production
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_ORG_ID: team_x9rctQP08KrOwurkk77O3KVd
+          VERCEL_PROJECT_ID: prj_HDbxSTPlg7QuiPAraoHHUhFWFh6K
+        run: |
+          echo "🔍 Finding deployment for commit ${{ github.sha }}..."
+
+          # Get list of deployments for this project
+          DEPLOYMENTS=$(vercel ls --token=$VERCEL_TOKEN 2>&1)
+
+          echo "Recent deployments:"
+          echo "$DEPLOYMENTS"
+          echo ""
+
+          # Find deployment URL for this commit (first 7 chars)
+          COMMIT_SHORT="${{ github.sha }}"
+          COMMIT_SHORT="${COMMIT_SHORT:0:7}"
+
+          # Try to find the deployment by inspecting recent deployments
+          # Vercel CLI shows deployments with their URLs
+          DEPLOYMENT_URL=$(echo "$DEPLOYMENTS" | grep -o 'https://[^ ]*vercel.app' | head -1)
+
+          if [ -z "$DEPLOYMENT_URL" ]; then
+            echo "❌ Could not find deployment URL"
+            echo "Attempting to get latest deployment..."
+
+            # Alternative: get the latest deployment
+            DEPLOYMENT_URL=$(vercel ls --token=$VERCEL_TOKEN 2>&1 | grep -o 'https://[^ ]*vercel.app' | head -1)
+          fi
+
+          if [ -n "$DEPLOYMENT_URL" ]; then
+            echo "✅ Found deployment: $DEPLOYMENT_URL"
+            echo ""
+            echo "🚀 Promoting to production..."
+
+            vercel promote "$DEPLOYMENT_URL" --token=$VERCEL_TOKEN --yes
+
+            echo ""
+            echo "✅ Deployment promoted successfully!"
+          else
+            echo "⚠️ Could not find deployment to promote"
+            echo "Deployments may already be live or need manual promotion"
+            echo "Check Vercel dashboard: https://vercel.com/dashboard"
+          fi
 
       - name: Wait and verify production deployment
         env:
