@@ -127,7 +127,7 @@ export function AnalyticsCharts({
       <ResponsiveContainer width="100%" height={300}>
         <PieChart>
           <Pie
-            data={pieChartData}
+            data={pieChartData as Array<{ name: string; value: number }>}
             cx="50%"
             cy="50%"
             labelLine={false}
