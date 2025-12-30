@@ -1,6 +1,6 @@
 import { createAdminClient } from '@/lib/supabase/admin';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { FileText, Briefcase, Mail, Activity } from 'lucide-react';
+import { FileText, Briefcase, Mail, Activity, Eye } from 'lucide-react';
 
 export default async function AdminDashboard() {
   const supabase = createAdminClient();
@@ -24,12 +24,25 @@ export default async function AdminDashboard() {
     .select('*', { count: 'exact', head: true })
     .eq('is_read', false);
 
+  // Get total page views
+  const [
+    { data: blogsData },
+    { data: projectsData }
+  ] = await Promise.all([
+    supabase.from('blogs').select('view_count'),
+    supabase.from('projects').select('view_count'),
+  ]);
+
+  const totalBlogViews = blogsData?.reduce((sum, blog) => sum + (blog.view_count || 0), 0) || 0;
+  const totalProjectViews = projectsData?.reduce((sum, project) => sum + (project.view_count || 0), 0) || 0;
+  const totalPageViews = totalBlogViews + totalProjectViews;
+
   const stats = [
     { name: 'Total Blogs', value: blogsCount || 0, icon: FileText },
     { name: 'Professional Projects', value: professionalProjectsCount || 0, icon: Briefcase },
     { name: 'Total Projects', value: projectsCount || 0, icon: Briefcase },
     { name: 'Unread Messages', value: unreadMessages || 0, icon: Mail },
-    { name: 'Total Visitors', value: activityCount || 0, icon: Activity },
+    { name: 'Total Page Views', value: totalPageViews, icon: Eye },
   ];
 
   return (

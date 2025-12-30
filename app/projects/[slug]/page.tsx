@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import Link from 'next/link';
 import { getProjectImageUrl } from '@/lib/utils/youtube';
+import { TrackPageView } from '@/components/track-page-view';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -126,6 +127,7 @@ export default async function ProjectDetail({
 
   return (
     <div className="min-h-screen">
+      <TrackPageView type="project" id={project.id} />
       <article className="container mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div className="max-w-4xl mx-auto">
           <Button asChild variant="ghost" className="mb-8">

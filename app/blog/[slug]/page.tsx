@@ -4,6 +4,7 @@ import { createClient } from '@/lib/supabase/server';
 import { Calendar, Clock, ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
+import { TrackPageView } from '@/components/track-page-view';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -107,18 +108,9 @@ export default async function BlogPost({
       notFound();
     }
 
-    // Skip view count for now to isolate issue
-    // try {
-    //   await supabase
-    //     .from('blogs')
-    //     .update({ views: (blog.views || 0) + 1 })
-    //     .eq('id', blog.id);
-    // } catch (viewError) {
-    //   console.error('View count update failed:', viewError);
-    // }
-
     return (
       <div className="min-h-screen">
+        <TrackPageView type="blog" id={blog.id} />
         {/* Hero Section */}
         <div className="bg-gradient-to-br from-primary/10 via-background to-secondary/10 py-16 sm:py-24">
           <div className="container mx-auto px-4 sm:px-6 lg:px-8">

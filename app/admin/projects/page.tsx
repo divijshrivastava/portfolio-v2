@@ -113,6 +113,9 @@ export default function ProjectsPage() {
                             </span>
                           )}
                           <span>{new Date(project.created_at).toLocaleDateString()}</span>
+                          {project.view_count !== null && project.view_count !== undefined && (
+                            <span>{project.view_count} {project.view_count === 1 ? 'view' : 'views'}</span>
+                          )}
                         </div>
                         <div className="flex gap-2 mt-2">
                           {project.project_url && (

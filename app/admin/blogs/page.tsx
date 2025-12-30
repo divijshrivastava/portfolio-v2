@@ -74,7 +74,9 @@ export default function BlogsPage() {
                         {blog.status}
                       </span>
                       <span>{new Date(blog.created_at).toLocaleDateString()}</span>
-                      {blog.views !== null && <span>{blog.views} views</span>}
+                      {blog.view_count !== null && blog.view_count !== undefined && (
+                        <span>{blog.view_count} {blog.view_count === 1 ? 'view' : 'views'}</span>
+                      )}
                     </div>
                   </div>
                   <div className="flex gap-2">
