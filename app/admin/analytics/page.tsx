@@ -5,6 +5,21 @@ import { createClient } from '@/lib/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { BarChart3, TrendingUp, Eye, FileText, Briefcase } from 'lucide-react';
 import Link from 'next/link';
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  ResponsiveContainer,
+  PieChart,
+  Pie,
+  Cell,
+  LineChart,
+  Line,
+} from 'recharts';
 
 interface BlogAnalytics {
   id: string;
@@ -33,6 +48,10 @@ export default function AnalyticsPage() {
   const [totalProjectViews, setTotalProjectViews] = useState(0);
   const [publishedBlogs, setPublishedBlogs] = useState(0);
   const [publishedProjects, setPublishedProjects] = useState(0);
+  
+  // Theme colors (cyan primary, slate secondary)
+  const primaryColor = '#06b6d4';
+  const secondaryColor = '#64748b';
 
   useEffect(() => {
     loadAnalytics();
@@ -96,6 +115,24 @@ export default function AnalyticsPage() {
   const topBlogs = blogs.filter(b => b.status === 'published').slice(0, 10);
   const topProjects = projects.filter(p => p.status === 'published').slice(0, 10);
   const maxViews = getMaxViews();
+
+  // Prepare data for charts
+  const blogChartData = topBlogs.map(blog => ({
+    name: blog.title.length > 20 ? blog.title.substring(0, 20) + '...' : blog.title,
+    views: blog.view_count || 0,
+    fullName: blog.title,
+  }));
+
+  const projectChartData = topProjects.map(project => ({
+    name: project.title.length > 20 ? project.title.substring(0, 20) + '...' : project.title,
+    views: project.view_count || 0,
+    fullName: project.title,
+  }));
+
+  const pieChartData = [
+    { name: 'Blogs', value: totalBlogViews, color: primaryColor },
+    { name: 'Projects', value: totalProjectViews, color: secondaryColor },
+  ];
 
   return (
     <div>
@@ -161,6 +198,170 @@ export default function AnalyticsPage() {
             <p className="text-xs text-muted-foreground mt-1">
               Average across all content
             </p>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Graph Visualizations */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+        {/* Top Blogs Bar Chart */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <BarChart3 className="h-5 w-5" />
+              Top 10 Blogs - View Distribution
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {blogChartData.length === 0 ? (
+              <p className="text-muted-foreground text-center py-8">No published blogs yet.</p>
+            ) : (
+              <ResponsiveContainer width="100%" height={300}>
+                <BarChart data={blogChartData}>
+                  <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                  <XAxis
+                    dataKey="name"
+                    angle={-45}
+                    textAnchor="end"
+                    height={100}
+                    className="text-xs"
+                    tick={{ fill: 'hsl(var(--muted-foreground))' }}
+                  />
+                  <YAxis tick={{ fill: 'hsl(var(--muted-foreground))' }} />
+                  <Tooltip
+                    contentStyle={{
+                      backgroundColor: 'hsl(var(--background))',
+                      border: '1px solid hsl(var(--border))',
+                      borderRadius: '6px',
+                    }}
+                    formatter={(value: number, name: string, props: any) => [
+                      `${value} views`,
+                      props.payload.fullName,
+                    ]}
+                  />
+                  <Bar dataKey="views" fill={primaryColor} radius={[4, 4, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Top Projects Bar Chart */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <BarChart3 className="h-5 w-5" />
+              Top 10 Projects - View Distribution
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {projectChartData.length === 0 ? (
+              <p className="text-muted-foreground text-center py-8">No published projects yet.</p>
+            ) : (
+              <ResponsiveContainer width="100%" height={300}>
+                <BarChart data={projectChartData}>
+                  <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                  <XAxis
+                    dataKey="name"
+                    angle={-45}
+                    textAnchor="end"
+                    height={100}
+                    className="text-xs"
+                    tick={{ fill: 'hsl(var(--muted-foreground))' }}
+                  />
+                  <YAxis tick={{ fill: 'hsl(var(--muted-foreground))' }} />
+                  <Tooltip
+                    contentStyle={{
+                      backgroundColor: 'hsl(var(--background))',
+                      border: '1px solid hsl(var(--border))',
+                      borderRadius: '6px',
+                    }}
+                    formatter={(value: number, name: string, props: any) => [
+                      `${value} views`,
+                      props.payload.fullName,
+                    ]}
+                  />
+                  <Bar dataKey="views" fill={secondaryColor} radius={[4, 4, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Pie Chart and Comparison */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+        {/* Views Distribution Pie Chart */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <TrendingUp className="h-5 w-5" />
+              Views Distribution
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ResponsiveContainer width="100%" height={300}>
+              <PieChart>
+                <Pie
+                  data={pieChartData}
+                  cx="50%"
+                  cy="50%"
+                  labelLine={false}
+                  label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                  outerRadius={80}
+                  fill="#8884d8"
+                  dataKey="value"
+                >
+                  {pieChartData.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={entry.color} />
+                  ))}
+                </Pie>
+                <Tooltip
+                  contentStyle={{
+                    backgroundColor: 'hsl(var(--background))',
+                    border: '1px solid hsl(var(--border))',
+                    borderRadius: '6px',
+                  }}
+                  formatter={(value: number) => `${value.toLocaleString()} views`}
+                />
+                <Legend />
+              </PieChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+
+        {/* Comparison Chart */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <BarChart3 className="h-5 w-5" />
+              Blogs vs Projects Comparison
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ResponsiveContainer width="100%" height={300}>
+              <BarChart
+                data={[
+                  { name: 'Blogs', views: totalBlogViews },
+                  { name: 'Projects', views: totalProjectViews },
+                ]}
+                margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
+              >
+                <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                <XAxis tick={{ fill: 'hsl(var(--muted-foreground))' }} />
+                <YAxis tick={{ fill: 'hsl(var(--muted-foreground))' }} />
+                <Tooltip
+                  contentStyle={{
+                    backgroundColor: 'hsl(var(--background))',
+                    border: '1px solid hsl(var(--border))',
+                    borderRadius: '6px',
+                  }}
+                  formatter={(value: number) => `${value.toLocaleString()} views`}
+                />
+                <Legend />
+                <Bar dataKey="views" fill={primaryColor} radius={[4, 4, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
           </CardContent>
         </Card>
       </div>
