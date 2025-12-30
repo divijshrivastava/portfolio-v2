@@ -5,6 +5,7 @@ import { Calendar, Clock, ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { TrackPageView } from '@/components/track-page-view';
+import { NewsletterCTA } from '@/components/newsletter/newsletter-cta';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -191,6 +192,15 @@ export default async function BlogPost({
               className="prose prose-lg dark:prose-invert max-w-none"
               dangerouslySetInnerHTML={{ __html: blog.content }}
             />
+
+            {/* Newsletter CTA (End of Post) */}
+            <div className="mt-12">
+              <NewsletterCTA
+                source="blog_post_end"
+                title="Want more like this?"
+                description="Subscribe and I’ll send the next post straight to your inbox."
+              />
+            </div>
           </div>
         </article>
       </div>

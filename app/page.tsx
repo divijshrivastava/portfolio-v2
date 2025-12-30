@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { HeroImage } from '@/components/hero-image';
 import { createClient } from '@/lib/supabase/server';
+import { NewsletterCTA } from '@/components/newsletter/newsletter-cta';
 
 export const revalidate = 3600;
 
@@ -67,6 +68,16 @@ export default async function Home() {
               <Button asChild variant="outline" size="lg">
                 <Link href="/projects">View Projects</Link>
               </Button>
+            </div>
+
+            {/* Newsletter CTA (Hero) */}
+            <div className="pt-2">
+              <NewsletterCTA
+                source="homepage_hero"
+                title="Get my best engineering write-ups"
+                description="Occasional emails on system design, performance, and real production lessons."
+                className="max-w-xl"
+              />
             </div>
           </div>
 

@@ -3,6 +3,7 @@ import Image from 'next/image';
 import { createClient } from '@/lib/supabase/server';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Calendar, Clock } from 'lucide-react';
+import { NewsletterCTA } from '@/components/newsletter/newsletter-cta';
 
 export const revalidate = 3600; // Revalidate every hour
 
@@ -22,6 +23,14 @@ export default async function BlogPage() {
         <p className="text-xl text-muted-foreground mb-12">
           I write about real engineering problems, architectural trade-offs, and lessons learned from building production systems. Expect deep dives into system design, performance optimization, and the practical challenges of full-stack development—no fluff, just engineering insights.
         </p>
+
+        <div className="mb-12">
+          <NewsletterCTA
+            source="blog_index"
+            title="Subscribe for new posts"
+            description="Get notified when a new deep-dive drops."
+          />
+        </div>
 
         {blogs && blogs.length > 0 ? (
           <div className="space-y-8">
