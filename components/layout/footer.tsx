@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { Github, Linkedin, Twitter } from 'lucide-react';
+import { NewsletterForm } from '@/components/newsletter/newsletter-form';
 
 export function Footer() {
   const currentYear = new Date().getFullYear();
@@ -7,7 +8,7 @@ export function Footer() {
   return (
     <footer className="border-t bg-background">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           {/* About */}
           <div>
             <h3 className="font-semibold text-lg mb-4">Divij Shrivastava</h3>
@@ -71,6 +72,15 @@ export function Footer() {
                 <Twitter className="h-5 w-5" />
               </a>
             </div>
+          </div>
+
+          {/* Newsletter */}
+          <div>
+            <h3 className="font-semibold text-lg mb-4">Newsletter</h3>
+            <p className="text-sm text-muted-foreground mb-3">
+              Get new posts and engineering notes—no spam.
+            </p>
+            <NewsletterForm source="footer" />
           </div>
         </div>
 
