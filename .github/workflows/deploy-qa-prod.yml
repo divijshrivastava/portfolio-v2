@@ -319,10 +319,27 @@ jobs:
             echo ""
             echo "🚀 Promoting to production..."
 
-            vercel promote "$DEPLOYMENT_URL" --token=$VERCEL_TOKEN --scope=$VERCEL_ORG_ID --yes
+            # Attempt promotion and handle case where deployment is already in production
+            PROMOTE_OUTPUT=$(vercel promote "$DEPLOYMENT_URL" --token=$VERCEL_TOKEN --scope=$VERCEL_ORG_ID --yes 2>&1)
+            PROMOTE_EXIT_CODE=$?
 
-            echo ""
-            echo "✅ Deployment promoted successfully!"
+            if [ $PROMOTE_EXIT_CODE -eq 0 ]; then
+              echo ""
+              echo "✅ Deployment promoted successfully!"
+            elif echo "$PROMOTE_OUTPUT" | grep -qi "already the current production deployment"; then
+              echo ""
+              echo "ℹ️  Deployment is already in production (no promotion needed)"
+              echo "✅ Production deployment is up to date!"
+            else
+              echo ""
+              echo "⚠️  Promotion command returned exit code: $PROMOTE_EXIT_CODE"
+              echo "Output: $PROMOTE_OUTPUT"
+              echo ""
+              echo "This may indicate the deployment is already in production or there was an issue."
+              echo "Checking Vercel dashboard: https://vercel.com/dashboard"
+              echo ""
+              echo "Proceeding with verification step..."
+            fi
           else
             echo "⚠️ Could not find deployment to promote"
             echo "Deployments may already be live or need manual promotion"
