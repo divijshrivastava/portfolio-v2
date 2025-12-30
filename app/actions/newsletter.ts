@@ -4,8 +4,9 @@ import { createAdminClient } from '@/lib/supabase/admin';
 import { headers } from 'next/headers';
 
 const RATE_LIMIT_CONFIG = {
-  COOLDOWN_SECONDS: 30, // keep UX snappy, but reduce accidental spam/double-clicks
-  MAX_DAILY_ATTEMPTS: 50, // hard cap per IP per 24h
+  FREE_ATTEMPTS: 3, // allow a few quick retries (typos, etc.)
+  COOLDOWN_SECONDS: 5 * 60, // after free attempts, enforce a cooldown
+  MAX_DAILY_ATTEMPTS: 30, // hard cap per IP per 24h
 };
 
 export interface NewsletterSubscribeInput {
@@ -42,43 +43,50 @@ async function checkRateLimit(ipAddress: string): Promise<RateLimitResult> {
   const supabase = createAdminClient();
   const now = new Date();
 
-  // Daily cap
-  const { count } = await supabase
+  const { data: rl } = await supabase
     .from('rate_limits')
-    .select('*', { count: 'exact', head: true })
+    .select('*')
     .eq('ip_address', ipAddress)
     .eq('action_type', 'newsletter_subscribe')
-    .gte('first_attempt_at', new Date(now.getTime() - 24 * 60 * 60 * 1000).toISOString());
+    .single();
 
-  if (count && count >= 1) {
-    // Use the single rate limit row to enforce cooldown + daily attempts
-    const { data: rl } = await supabase
-      .from('rate_limits')
-      .select('*')
-      .eq('ip_address', ipAddress)
-      .eq('action_type', 'newsletter_subscribe')
-      .single();
+  if (!rl) {
+    // First attempt - allow
+    return { allowed: true };
+  }
 
-    if (rl) {
-      if (rl.attempt_count >= RATE_LIMIT_CONFIG.MAX_DAILY_ATTEMPTS) {
-        return {
-          allowed: false,
-          error: `Too many subscription attempts from your network today. Please try again tomorrow.`,
-          waitTime: 3600,
-        };
-      }
+  const firstAttempt = new Date(rl.first_attempt_at);
+  const lastAttempt = new Date(rl.last_attempt_at);
+  const hoursSinceFirstAttempt = (now.getTime() - firstAttempt.getTime()) / (1000 * 60 * 60);
+  const secondsSinceLastAttempt = (now.getTime() - lastAttempt.getTime()) / 1000;
 
-      const lastAttempt = new Date(rl.last_attempt_at);
-      const secondsSinceLast = (now.getTime() - lastAttempt.getTime()) / 1000;
-      if (secondsSinceLast < RATE_LIMIT_CONFIG.COOLDOWN_SECONDS) {
-        const waitTime = Math.ceil(RATE_LIMIT_CONFIG.COOLDOWN_SECONDS - secondsSinceLast);
-        return {
-          allowed: false,
-          error: `Please wait ${waitTime}s before trying again.`,
-          waitTime,
-        };
-      }
-    }
+  // Reset window after 24 hours
+  if (hoursSinceFirstAttempt >= 24) {
+    return { allowed: true };
+  }
+
+  // Daily cap (attempt_count is within the 24h window due to reset logic in updateRateLimit)
+  if (rl.attempt_count >= RATE_LIMIT_CONFIG.MAX_DAILY_ATTEMPTS) {
+    return {
+      allowed: false,
+      error: `Too many subscription attempts from your network today. Please try again tomorrow.`,
+      waitTime: 3600,
+    };
+  }
+
+  // Allow first few attempts without cooldown
+  if (rl.attempt_count < RATE_LIMIT_CONFIG.FREE_ATTEMPTS) {
+    return { allowed: true };
+  }
+
+  // After free attempts, enforce cooldown
+  if (secondsSinceLastAttempt < RATE_LIMIT_CONFIG.COOLDOWN_SECONDS) {
+    const waitTime = Math.ceil(RATE_LIMIT_CONFIG.COOLDOWN_SECONDS - secondsSinceLastAttempt);
+    return {
+      allowed: false,
+      error: `Please wait ${waitTime}s before trying again.`,
+      waitTime,
+    };
   }
 
   return { allowed: true };
