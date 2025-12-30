@@ -3,8 +3,9 @@
 import { useState, useEffect } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Activity, Trash2, Calendar } from 'lucide-react';
+import { Activity, Trash2, Calendar, BarChart3 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import Link from 'next/link';
 
 interface UserActivity {
   id: string;
@@ -78,10 +79,18 @@ export default function ActivityPage() {
             Total visits: {totalCount} (showing last 100)
           </p>
         </div>
-        <Button variant="destructive" onClick={handleClearAll}>
-          <Trash2 className="mr-2 h-4 w-4" />
-          Clear All
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="outline" asChild>
+            <Link href="/admin/activity/analytics">
+              <BarChart3 className="mr-2 h-4 w-4" />
+              View Analytics
+            </Link>
+          </Button>
+          <Button variant="destructive" onClick={handleClearAll}>
+            <Trash2 className="mr-2 h-4 w-4" />
+            Clear All
+          </Button>
+        </div>
       </div>
 
       {activities.length === 0 ? (
