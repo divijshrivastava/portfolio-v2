@@ -5,7 +5,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Plus, Edit, Trash2, Eye, ExternalLink, Github, Youtube, ArrowUpDown } from 'lucide-react';
+import { Plus, Edit, Trash2, Eye, ExternalLink, Github, Youtube, ArrowUpDown, BarChart3, TrendingUp, ArrowRight } from 'lucide-react';
 import { getProjectImageUrl } from '@/lib/utils/youtube';
 import { MigrateProjectsButton } from '@/components/admin/migrate-projects-button';
 import { TableSkeleton } from '@/components/admin/loading-skeleton';
@@ -18,6 +18,14 @@ export default function ProjectsPage() {
   const [loading, setLoading] = useState(true);
   const [sortField, setSortField] = useState<SortField>('created_at');
   const [sortOrder, setSortOrder] = useState<SortOrder>('desc');
+  
+  // Calculate analytics
+  const totalViews = projects.reduce((sum, project) => sum + (project.view_count || 0), 0);
+  const publishedCount = projects.filter(p => p.status === 'published').length;
+  const professionalCount = projects.filter(p => p.project_type === 'professional').length;
+  const topProject = projects
+    .filter(p => p.status === 'published')
+    .sort((a, b) => (b.view_count || 0) - (a.view_count || 0))[0];
 
   const loadProjects = async () => {
     const response = await fetch('/api/admin/projects');
@@ -115,7 +123,52 @@ export default function ProjectsPage() {
       </div>
 
       {projects && projects.length > 0 ? (
-        <div className="space-y-4">
+        <div className="space-y-6">
+          {/* Analytics Summary */}
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between">
+              <CardTitle className="flex items-center gap-2">
+                <BarChart3 className="h-5 w-5" />
+                Project Analytics
+              </CardTitle>
+              <Button variant="outline" size="sm" asChild>
+                <Link href="/admin/analytics">
+                  View Full Analytics
+                  <ArrowRight className="ml-2 h-4 w-4" />
+                </Link>
+              </Button>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
+                <div className="space-y-1">
+                  <p className="text-sm text-muted-foreground">Total Views</p>
+                  <p className="text-2xl font-bold">{totalViews.toLocaleString()}</p>
+                </div>
+                <div className="space-y-1">
+                  <p className="text-sm text-muted-foreground">Published</p>
+                  <p className="text-2xl font-bold">{publishedCount}</p>
+                </div>
+                <div className="space-y-1">
+                  <p className="text-sm text-muted-foreground">Professional</p>
+                  <p className="text-2xl font-bold">{professionalCount}</p>
+                </div>
+                <div className="space-y-1">
+                  <p className="text-sm text-muted-foreground">Top Performer</p>
+                  {topProject ? (
+                    <div>
+                      <p className="text-lg font-semibold line-clamp-1">{topProject.title}</p>
+                      <p className="text-sm text-muted-foreground">
+                        {topProject.view_count || 0} views
+                      </p>
+                    </div>
+                  ) : (
+                    <p className="text-sm text-muted-foreground">No published projects yet</p>
+                  )}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
           {/* Sort Controls */}
           <div className="flex gap-2 items-center text-sm">
             <span className="text-muted-foreground">Sort by:</span>

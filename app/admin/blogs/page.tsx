@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Plus, Edit, Trash2, Eye, ArrowUpDown } from 'lucide-react';
+import { Plus, Edit, Trash2, Eye, ArrowUpDown, BarChart3, TrendingUp, ArrowRight } from 'lucide-react';
 import { TableSkeleton } from '@/components/admin/loading-skeleton';
 
 type SortField = 'created_at' | 'view_count' | 'title';
@@ -15,6 +15,13 @@ export default function BlogsPage() {
   const [loading, setLoading] = useState(true);
   const [sortField, setSortField] = useState<SortField>('created_at');
   const [sortOrder, setSortOrder] = useState<SortOrder>('desc');
+  
+  // Calculate analytics
+  const totalViews = blogs.reduce((sum, blog) => sum + (blog.view_count || 0), 0);
+  const publishedCount = blogs.filter(b => b.status === 'published').length;
+  const topBlog = blogs
+    .filter(b => b.status === 'published')
+    .sort((a, b) => (b.view_count || 0) - (a.view_count || 0))[0];
 
   const loadBlogs = async () => {
     const response = await fetch('/api/admin/blogs');
@@ -105,7 +112,48 @@ export default function BlogsPage() {
       </div>
 
       {blogs && blogs.length > 0 ? (
-        <div className="space-y-4">
+        <div className="space-y-6">
+          {/* Analytics Summary */}
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between">
+              <CardTitle className="flex items-center gap-2">
+                <BarChart3 className="h-5 w-5" />
+                Blog Analytics
+              </CardTitle>
+              <Button variant="outline" size="sm" asChild>
+                <Link href="/admin/analytics">
+                  View Full Analytics
+                  <ArrowRight className="ml-2 h-4 w-4" />
+                </Link>
+              </Button>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div className="space-y-1">
+                  <p className="text-sm text-muted-foreground">Total Views</p>
+                  <p className="text-2xl font-bold">{totalViews.toLocaleString()}</p>
+                </div>
+                <div className="space-y-1">
+                  <p className="text-sm text-muted-foreground">Published Posts</p>
+                  <p className="text-2xl font-bold">{publishedCount}</p>
+                </div>
+                <div className="space-y-1">
+                  <p className="text-sm text-muted-foreground">Top Performer</p>
+                  {topBlog ? (
+                    <div>
+                      <p className="text-lg font-semibold line-clamp-1">{topBlog.title}</p>
+                      <p className="text-sm text-muted-foreground">
+                        {topBlog.view_count || 0} views
+                      </p>
+                    </div>
+                  ) : (
+                    <p className="text-sm text-muted-foreground">No published posts yet</p>
+                  )}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
           {/* Sort Controls */}
           <div className="flex gap-2 items-center text-sm">
             <span className="text-muted-foreground">Sort by:</span>

@@ -129,10 +129,28 @@ export default function AnalyticsPage() {
   return (
     <div>
       <div className="mb-8">
-        <h2 className="text-3xl font-bold mb-2">Page Analytics</h2>
-        <p className="text-muted-foreground">
-          Detailed view statistics for blogs and projects
-        </p>
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-4xl font-bold tracking-tight">Page Analytics</h1>
+            <p className="text-muted-foreground mt-2">
+              Detailed view statistics for blogs and projects
+            </p>
+          </div>
+          <div className="flex gap-2">
+            <Button variant="outline" size="sm" asChild>
+              <Link href="/admin/blogs">
+                <FileText className="mr-2 h-4 w-4" />
+                Manage Blogs
+              </Link>
+            </Button>
+            <Button variant="outline" size="sm" asChild>
+              <Link href="/admin/projects">
+                <Briefcase className="mr-2 h-4 w-4" />
+                Manage Projects
+              </Link>
+            </Button>
+          </div>
+        </div>
       </div>
 
       {/* Summary Cards */}
