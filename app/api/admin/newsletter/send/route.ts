@@ -1,0 +1,139 @@
+import { NextResponse } from 'next/server';
+import { createClient } from '@/lib/supabase/server';
+import { createAdminClient } from '@/lib/supabase/admin';
+
+type Audience =
+  | { type: 'all' }
+  | { type: 'source'; source: string }
+  | { type: 'manual'; emails: string[] };
+
+function normalizeEmail(email: string): string {
+  return email.trim().toLowerCase();
+}
+
+function isValidEmail(email: string): boolean {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+}
+
+function uniq<T>(arr: T[]): T[] {
+  return Array.from(new Set(arr));
+}
+
+async function assertAdmin() {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+
+  if (!user) {
+    return { ok: false as const, reason: 'Not authenticated' };
+  }
+
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('is_admin')
+    .eq('id', user.id)
+    .single();
+
+  if (!profile?.is_admin) {
+    return { ok: false as const, reason: 'Not authorized' };
+  }
+
+  return { ok: true as const, userId: user.id };
+}
+
+export async function POST(req: Request) {
+  try {
+    const auth = await assertAdmin();
+    if (!auth.ok) {
+      return NextResponse.json({ error: auth.reason }, { status: 401 });
+    }
+
+    const body = await req.json();
+    const newsletterId = String(body.newsletterId || '').trim();
+    const audience = body.audience as Audience | undefined;
+
+    if (!newsletterId) {
+      return NextResponse.json({ error: 'newsletterId is required' }, { status: 400 });
+    }
+    if (!audience || !('type' in audience)) {
+      return NextResponse.json({ error: 'audience is required' }, { status: 400 });
+    }
+
+    const admin = createAdminClient();
+
+    const { data: newsletter, error: nErr } = await admin
+      .from('newsletters')
+      .select('id, subject, preview_text, body_html, attachments, status')
+      .eq('id', newsletterId)
+      .single();
+
+    if (nErr || !newsletter) {
+      return NextResponse.json({ error: nErr?.message || 'Newsletter not found' }, { status: 404 });
+    }
+    if (newsletter.status !== 'published') {
+      return NextResponse.json({ error: 'Newsletter must be published before sending.' }, { status: 400 });
+    }
+
+    let recipients: { subscriber_id: string | null; email: string }[] = [];
+
+    if (audience.type === 'all') {
+      const { data, error } = await admin
+        .from('newsletter_subscribers')
+        .select('id, email')
+        .order('created_at', { ascending: true });
+      if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+      recipients = (data || []).map((r) => ({ subscriber_id: r.id, email: r.email }));
+    } else if (audience.type === 'source') {
+      const source = String((audience as any).source || '').trim();
+      if (!source) return NextResponse.json({ error: 'source is required for audience.type=source' }, { status: 400 });
+      const { data, error } = await admin
+        .from('newsletter_subscribers')
+        .select('id, email')
+        .eq('source', source)
+        .order('created_at', { ascending: true });
+      if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+      recipients = (data || []).map((r) => ({ subscriber_id: r.id, email: r.email }));
+    } else if (audience.type === 'manual') {
+      const rawEmails = Array.isArray((audience as any).emails) ? (audience as any).emails : [];
+      const cleaned = uniq(rawEmails.map(normalizeEmail)).filter((e) => e && isValidEmail(e));
+      recipients = cleaned.map((email) => ({ subscriber_id: null, email }));
+    } else {
+      return NextResponse.json({ error: 'Unsupported audience type' }, { status: 400 });
+    }
+
+    // Dedupe by email
+    const byEmail = new Map<string, { subscriber_id: string | null; email: string }>();
+    for (const r of recipients) {
+      const e = normalizeEmail(r.email);
+      if (!e || !isValidEmail(e)) continue;
+      if (!byEmail.has(e)) byEmail.set(e, { subscriber_id: r.subscriber_id, email: e });
+    }
+    recipients = Array.from(byEmail.values());
+
+    const { data: sendRow, error: sendErr } = await admin
+      .from('newsletter_sends')
+      .insert({
+        newsletter_id: newsletterId,
+        audience,
+        status: 'sending',
+        sent_by: auth.userId,
+        started_at: new Date().toISOString(),
+        total_recipients: recipients.length,
+      })
+      .select('id')
+      .single();
+
+    if (sendErr || !sendRow) {
+      return NextResponse.json({ error: sendErr?.message || 'Failed to create send' }, { status: 500 });
+    }
+
+    const sendId = sendRow.id as string;
+
+    // Delivery and sending are performed by the Supabase-triggered Edge Function (send-newsletter).
+    return NextResponse.json({ sendId, total: recipients.length });
+  } catch (e: any) {
+    console.error('[Newsletter send] Error:', e);
+    return NextResponse.json({ error: String(e?.message || e) }, { status: 500 });
+  }
+}
+
+
