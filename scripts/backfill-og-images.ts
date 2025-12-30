@@ -4,7 +4,10 @@
  * This script generates optimized Open Graph images (1200x630 WebP) for all
  * existing published blogs and projects that don't have an og_image_url yet.
  * 
- * Run with: npm run backfill:og-images
+ * Usage:
+ *   npm run backfill:og-images           # Backfill production (default)
+ *   npm run backfill:og-images qa        # Backfill QA environment
+ *   npm run backfill:og-images prod      # Backfill production (explicit)
  */
 
 import { config } from 'dotenv';
@@ -14,13 +17,31 @@ import { optimizeImageForOG, downloadImage } from '../lib/utils/image-optimizati
 // Load environment variables from .env.local
 config({ path: '.env.local' });
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+// Determine environment from command line argument
+const environment = process.argv[2]?.toLowerCase() || 'prod';
+
+let supabaseUrl: string | undefined;
+let supabaseServiceKey: string | undefined;
+
+if (environment === 'qa') {
+  supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL_QA;
+  supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY_QA;
+  console.log('🔧 Running in QA mode\n');
+} else {
+  supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  console.log('🔧 Running in PRODUCTION mode\n');
+}
 
 if (!supabaseUrl || !supabaseServiceKey) {
   console.error('❌ Missing environment variables:');
-  console.error('   NEXT_PUBLIC_SUPABASE_URL:', !!supabaseUrl);
-  console.error('   SUPABASE_SERVICE_ROLE_KEY:', !!supabaseServiceKey);
+  if (environment === 'qa') {
+    console.error('   NEXT_PUBLIC_SUPABASE_URL_QA:', !!supabaseUrl);
+    console.error('   SUPABASE_SERVICE_ROLE_KEY_QA:', !!supabaseServiceKey);
+  } else {
+    console.error('   NEXT_PUBLIC_SUPABASE_URL:', !!supabaseUrl);
+    console.error('   SUPABASE_SERVICE_ROLE_KEY:', !!supabaseServiceKey);
+  }
   process.exit(1);
 }
 

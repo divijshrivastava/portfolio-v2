@@ -13,7 +13,9 @@
     "test:e2e:ui": "playwright test --ui",
     "test:all": "npm run test:unit && npm run test:e2e",
     "type-check": "tsc --noEmit",
-    "backfill:og-images": "tsx scripts/backfill-og-images.ts"
+    "backfill:og-images": "tsx scripts/backfill-og-images.ts",
+    "backfill:og-images:qa": "tsx scripts/backfill-og-images.ts qa",
+    "backfill:og-images:prod": "tsx scripts/backfill-og-images.ts prod"
   },
   "keywords": [],
   "author": "",
