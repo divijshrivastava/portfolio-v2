@@ -17,8 +17,6 @@ import {
   PieChart,
   Pie,
   Cell,
-  LineChart,
-  Line,
 } from 'recharts';
 
 interface BlogAnalytics {
@@ -234,10 +232,16 @@ export default function AnalyticsPage() {
                       border: '1px solid hsl(var(--border))',
                       borderRadius: '6px',
                     }}
-                    formatter={(value: number, name: string, props: any) => [
-                      `${value} views`,
-                      props.payload.fullName,
-                    ]}
+                    formatter={(value: number | undefined) => {
+                      if (value === undefined) return '';
+                      return `${value} views`;
+                    }}
+                    labelFormatter={(label, payload) => {
+                      if (payload && payload[0] && payload[0].payload) {
+                        return payload[0].payload.fullName;
+                      }
+                      return label;
+                    }}
                   />
                   <Bar dataKey="views" fill={primaryColor} radius={[4, 4, 0, 0]} />
                 </BarChart>
@@ -276,10 +280,16 @@ export default function AnalyticsPage() {
                       border: '1px solid hsl(var(--border))',
                       borderRadius: '6px',
                     }}
-                    formatter={(value: number, name: string, props: any) => [
-                      `${value} views`,
-                      props.payload.fullName,
-                    ]}
+                    formatter={(value: number | undefined) => {
+                      if (value === undefined) return '';
+                      return `${value} views`;
+                    }}
+                    labelFormatter={(label, payload) => {
+                      if (payload && payload[0] && payload[0].payload) {
+                        return payload[0].payload.fullName;
+                      }
+                      return label;
+                    }}
                   />
                   <Bar dataKey="views" fill={secondaryColor} radius={[4, 4, 0, 0]} />
                 </BarChart>
@@ -307,7 +317,10 @@ export default function AnalyticsPage() {
                   cx="50%"
                   cy="50%"
                   labelLine={false}
-                  label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                  label={({ name, percent }) => {
+                    if (percent === undefined) return name;
+                    return `${name}: ${(percent * 100).toFixed(0)}%`;
+                  }}
                   outerRadius={80}
                   fill="#8884d8"
                   dataKey="value"
@@ -322,7 +335,10 @@ export default function AnalyticsPage() {
                     border: '1px solid hsl(var(--border))',
                     borderRadius: '6px',
                   }}
-                  formatter={(value: number) => `${value.toLocaleString()} views`}
+                  formatter={(value: number | undefined) => {
+                    if (value === undefined) return '';
+                    return `${value.toLocaleString()} views`;
+                  }}
                 />
                 <Legend />
               </PieChart>
@@ -350,16 +366,19 @@ export default function AnalyticsPage() {
                 <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
                 <XAxis tick={{ fill: 'hsl(var(--muted-foreground))' }} />
                 <YAxis tick={{ fill: 'hsl(var(--muted-foreground))' }} />
-                <Tooltip
-                  contentStyle={{
-                    backgroundColor: 'hsl(var(--background))',
-                    border: '1px solid hsl(var(--border))',
-                    borderRadius: '6px',
-                  }}
-                  formatter={(value: number) => `${value.toLocaleString()} views`}
-                />
-                <Legend />
-                <Bar dataKey="views" fill={primaryColor} radius={[4, 4, 0, 0]} />
+                  <Tooltip
+                    contentStyle={{
+                      backgroundColor: 'hsl(var(--background))',
+                      border: '1px solid hsl(var(--border))',
+                      borderRadius: '6px',
+                    }}
+                    formatter={(value: number | undefined) => {
+                      if (value === undefined) return '';
+                      return `${value.toLocaleString()} views`;
+                    }}
+                  />
+                  <Legend />
+                  <Bar dataKey="views" fill={primaryColor} radius={[4, 4, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </CardContent>

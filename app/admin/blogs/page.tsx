@@ -18,7 +18,7 @@ export default function BlogsPage() {
   const loadBlogs = async () => {
     const response = await fetch('/api/admin/blogs');
     const data = await response.json();
-    let sortedBlogs = data.blogs || [];
+    const sortedBlogs = data.blogs || [];
     
     // Sort blogs
     sortedBlogs.sort((a: any, b: any) => {
