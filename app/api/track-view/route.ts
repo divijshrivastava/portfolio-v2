@@ -49,6 +49,11 @@ export async function POST(request: Request) {
       });
     }
 
+    // Log RPC error for debugging (but continue with fallback)
+    if (rpcError) {
+      console.error('RPC increment_view_count failed, using fallback:', rpcError);
+    }
+
     // Fallback: Manual increment if RPC function doesn't exist or fails
     const { data: current, error: fetchError } = await supabase
       .from(tableName)

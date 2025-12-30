@@ -23,16 +23,31 @@ export function TrackPageView({ type, id }: TrackPageViewProps) {
     // Track the view
     const trackView = async () => {
       try {
-        await fetch('/api/track-view', {
+        const response = await fetch('/api/track-view', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({ type, id }),
         });
+
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({}));
+          console.error('Failed to track page view:', {
+            status: response.status,
+            statusText: response.statusText,
+            error: errorData,
+            type,
+            id,
+          });
+        }
       } catch (error) {
-        // Silently fail - we don't want to break the page if tracking fails
-        console.error('Failed to track page view:', error);
+        // Log error for debugging but don't break the page
+        console.error('Failed to track page view (network error):', {
+          error,
+          type,
+          id,
+        });
       }
     };
 
