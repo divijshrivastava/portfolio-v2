@@ -1,23 +1,17 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import dynamic from 'next/dynamic';
 import { createClient } from '@/lib/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { BarChart3, TrendingUp, Eye, FileText, Briefcase } from 'lucide-react';
 import Link from 'next/link';
-import {
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  Legend,
-  ResponsiveContainer,
-  PieChart,
-  Pie,
-  Cell,
-} from 'recharts';
+
+// Dynamically import charts to avoid SSR issues
+const AnalyticsCharts = dynamic(
+  () => import('@/components/admin/analytics-charts').then((mod) => mod.AnalyticsCharts),
+  { ssr: false, loading: () => <div className="h-[300px] flex items-center justify-center text-muted-foreground">Loading charts...</div> }
+);
 
 interface BlogAnalytics {
   id: string;
@@ -214,38 +208,15 @@ export default function AnalyticsPage() {
             {blogChartData.length === 0 ? (
               <p className="text-muted-foreground text-center py-8">No published blogs yet.</p>
             ) : (
-              <ResponsiveContainer width="100%" height={300}>
-                <BarChart data={blogChartData}>
-                  <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-                  <XAxis
-                    dataKey="name"
-                    angle={-45}
-                    textAnchor="end"
-                    height={100}
-                    className="text-xs"
-                    tick={{ fill: 'hsl(var(--muted-foreground))' }}
-                  />
-                  <YAxis tick={{ fill: 'hsl(var(--muted-foreground))' }} />
-                  <Tooltip
-                    contentStyle={{
-                      backgroundColor: 'hsl(var(--background))',
-                      border: '1px solid hsl(var(--border))',
-                      borderRadius: '6px',
-                    }}
-                    formatter={(value: number | undefined) => {
-                      if (value === undefined) return '';
-                      return `${value} views`;
-                    }}
-                    labelFormatter={(label, payload) => {
-                      if (payload && payload[0] && payload[0].payload) {
-                        return payload[0].payload.fullName;
-                      }
-                      return label;
-                    }}
-                  />
-                  <Bar dataKey="views" fill={primaryColor} radius={[4, 4, 0, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
+              <AnalyticsCharts
+                blogChartData={blogChartData}
+                projectChartData={[]}
+                pieChartData={[]}
+                totalBlogViews={0}
+                totalProjectViews={0}
+                primaryColor={primaryColor}
+                secondaryColor={secondaryColor}
+              />
             )}
           </CardContent>
         </Card>
@@ -262,38 +233,15 @@ export default function AnalyticsPage() {
             {projectChartData.length === 0 ? (
               <p className="text-muted-foreground text-center py-8">No published projects yet.</p>
             ) : (
-              <ResponsiveContainer width="100%" height={300}>
-                <BarChart data={projectChartData}>
-                  <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-                  <XAxis
-                    dataKey="name"
-                    angle={-45}
-                    textAnchor="end"
-                    height={100}
-                    className="text-xs"
-                    tick={{ fill: 'hsl(var(--muted-foreground))' }}
-                  />
-                  <YAxis tick={{ fill: 'hsl(var(--muted-foreground))' }} />
-                  <Tooltip
-                    contentStyle={{
-                      backgroundColor: 'hsl(var(--background))',
-                      border: '1px solid hsl(var(--border))',
-                      borderRadius: '6px',
-                    }}
-                    formatter={(value: number | undefined) => {
-                      if (value === undefined) return '';
-                      return `${value} views`;
-                    }}
-                    labelFormatter={(label, payload) => {
-                      if (payload && payload[0] && payload[0].payload) {
-                        return payload[0].payload.fullName;
-                      }
-                      return label;
-                    }}
-                  />
-                  <Bar dataKey="views" fill={secondaryColor} radius={[4, 4, 0, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
+              <AnalyticsCharts
+                blogChartData={[]}
+                projectChartData={projectChartData}
+                pieChartData={[]}
+                totalBlogViews={0}
+                totalProjectViews={0}
+                primaryColor={primaryColor}
+                secondaryColor={secondaryColor}
+              />
             )}
           </CardContent>
         </Card>
@@ -310,39 +258,15 @@ export default function AnalyticsPage() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <ResponsiveContainer width="100%" height={300}>
-              <PieChart>
-                <Pie
-                  data={pieChartData}
-                  cx="50%"
-                  cy="50%"
-                  labelLine={false}
-                  label={({ name, percent }) => {
-                    if (percent === undefined) return name;
-                    return `${name}: ${(percent * 100).toFixed(0)}%`;
-                  }}
-                  outerRadius={80}
-                  fill="#8884d8"
-                  dataKey="value"
-                >
-                  {pieChartData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={entry.color} />
-                  ))}
-                </Pie>
-                <Tooltip
-                  contentStyle={{
-                    backgroundColor: 'hsl(var(--background))',
-                    border: '1px solid hsl(var(--border))',
-                    borderRadius: '6px',
-                  }}
-                  formatter={(value: number | undefined) => {
-                    if (value === undefined) return '';
-                    return `${value.toLocaleString()} views`;
-                  }}
-                />
-                <Legend />
-              </PieChart>
-            </ResponsiveContainer>
+            <AnalyticsCharts
+              blogChartData={[]}
+              projectChartData={[]}
+              pieChartData={pieChartData}
+              totalBlogViews={0}
+              totalProjectViews={0}
+              primaryColor={primaryColor}
+              secondaryColor={secondaryColor}
+            />
           </CardContent>
         </Card>
 
@@ -355,32 +279,15 @@ export default function AnalyticsPage() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <ResponsiveContainer width="100%" height={300}>
-              <BarChart
-                data={[
-                  { name: 'Blogs', views: totalBlogViews },
-                  { name: 'Projects', views: totalProjectViews },
-                ]}
-                margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
-              >
-                <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-                <XAxis tick={{ fill: 'hsl(var(--muted-foreground))' }} />
-                <YAxis tick={{ fill: 'hsl(var(--muted-foreground))' }} />
-                  <Tooltip
-                    contentStyle={{
-                      backgroundColor: 'hsl(var(--background))',
-                      border: '1px solid hsl(var(--border))',
-                      borderRadius: '6px',
-                    }}
-                    formatter={(value: number | undefined) => {
-                      if (value === undefined) return '';
-                      return `${value.toLocaleString()} views`;
-                    }}
-                  />
-                  <Legend />
-                  <Bar dataKey="views" fill={primaryColor} radius={[4, 4, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
+            <AnalyticsCharts
+              blogChartData={[]}
+              projectChartData={[]}
+              pieChartData={[]}
+              totalBlogViews={totalBlogViews}
+              totalProjectViews={totalProjectViews}
+              primaryColor={primaryColor}
+              secondaryColor={secondaryColor}
+            />
           </CardContent>
         </Card>
       </div>
