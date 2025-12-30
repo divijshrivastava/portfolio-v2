@@ -10,6 +10,7 @@ import {
   Activity,
   FileUp,
   LogOut,
+  BarChart3,
 } from 'lucide-react';
 
 const adminNav = [
@@ -17,6 +18,7 @@ const adminNav = [
   { name: 'Blogs', href: '/admin/blogs', icon: FileText },
   { name: 'Projects', href: '/admin/projects', icon: Briefcase },
   { name: 'Messages', href: '/admin/messages', icon: Mail },
+  { name: 'Analytics', href: '/admin/analytics', icon: BarChart3 },
   { name: 'Activity', href: '/admin/activity', icon: Activity },
   { name: 'Resume', href: '/admin/resume', icon: FileUp },
 ];

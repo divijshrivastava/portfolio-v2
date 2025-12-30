@@ -4,21 +4,59 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Plus, Edit, Trash2, Eye } from 'lucide-react';
+import { Plus, Edit, Trash2, Eye, ArrowUpDown } from 'lucide-react';
+
+type SortField = 'created_at' | 'view_count' | 'title';
+type SortOrder = 'asc' | 'desc';
 
 export default function BlogsPage() {
   const [blogs, setBlogs] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    loadBlogs();
-  }, []);
+  const [sortField, setSortField] = useState<SortField>('created_at');
+  const [sortOrder, setSortOrder] = useState<SortOrder>('desc');
 
   const loadBlogs = async () => {
     const response = await fetch('/api/admin/blogs');
     const data = await response.json();
-    setBlogs(data.blogs || []);
+    let sortedBlogs = data.blogs || [];
+    
+    // Sort blogs
+    sortedBlogs.sort((a: any, b: any) => {
+      let aVal = a[sortField];
+      let bVal = b[sortField];
+      
+      if (sortField === 'view_count') {
+        aVal = aVal || 0;
+        bVal = bVal || 0;
+      }
+      
+      if (sortField === 'title') {
+        aVal = (aVal || '').toLowerCase();
+        bVal = (bVal || '').toLowerCase();
+      }
+      
+      if (sortOrder === 'asc') {
+        return aVal > bVal ? 1 : aVal < bVal ? -1 : 0;
+      } else {
+        return aVal < bVal ? 1 : aVal > bVal ? -1 : 0;
+      }
+    });
+    
+    setBlogs(sortedBlogs);
     setLoading(false);
+  };
+
+  useEffect(() => {
+    loadBlogs();
+  }, [sortField, sortOrder]);
+
+  const handleSort = (field: SortField) => {
+    if (sortField === field) {
+      setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortField(field);
+      setSortOrder('desc');
+    }
   };
 
   const handleDelete = async (blogId: string, blogTitle: string) => {
@@ -59,6 +97,41 @@ export default function BlogsPage() {
 
       {blogs && blogs.length > 0 ? (
         <div className="space-y-4">
+          {/* Sort Controls */}
+          <div className="flex gap-2 items-center text-sm">
+            <span className="text-muted-foreground">Sort by:</span>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => handleSort('view_count')}
+              className="h-8"
+            >
+              Views
+              <ArrowUpDown className="ml-1 h-3 w-3" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => handleSort('created_at')}
+              className="h-8"
+            >
+              Date
+              <ArrowUpDown className="ml-1 h-3 w-3" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => handleSort('title')}
+              className="h-8"
+            >
+              Title
+              <ArrowUpDown className="ml-1 h-3 w-3" />
+            </Button>
+            <span className="text-muted-foreground ml-2">
+              ({sortField} {sortOrder === 'asc' ? '↑' : '↓'})
+            </span>
+          </div>
+
           {blogs.map((blog) => (
             <Card key={blog.id}>
               <CardHeader>
@@ -75,7 +148,7 @@ export default function BlogsPage() {
                       </span>
                       <span>{new Date(blog.created_at).toLocaleDateString()}</span>
                       {blog.view_count !== null && blog.view_count !== undefined && (
-                        <span>{blog.view_count} {blog.view_count === 1 ? 'view' : 'views'}</span>
+                        <span className="font-medium">{blog.view_count} {blog.view_count === 1 ? 'view' : 'views'}</span>
                       )}
                     </div>
                   </div>

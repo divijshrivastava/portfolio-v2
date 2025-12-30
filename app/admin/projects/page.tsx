@@ -5,23 +5,61 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Plus, Edit, Trash2, Eye, ExternalLink, Github, Youtube } from 'lucide-react';
+import { Plus, Edit, Trash2, Eye, ExternalLink, Github, Youtube, ArrowUpDown } from 'lucide-react';
 import { getProjectImageUrl } from '@/lib/utils/youtube';
 import { MigrateProjectsButton } from '@/components/admin/migrate-projects-button';
+
+type SortField = 'created_at' | 'view_count' | 'title';
+type SortOrder = 'asc' | 'desc';
 
 export default function ProjectsPage() {
   const [projects, setProjects] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    loadProjects();
-  }, []);
+  const [sortField, setSortField] = useState<SortField>('created_at');
+  const [sortOrder, setSortOrder] = useState<SortOrder>('desc');
 
   const loadProjects = async () => {
     const response = await fetch('/api/admin/projects');
     const data = await response.json();
-    setProjects(data.projects || []);
+    let sortedProjects = data.projects || [];
+    
+    // Sort projects
+    sortedProjects.sort((a: any, b: any) => {
+      let aVal = a[sortField];
+      let bVal = b[sortField];
+      
+      if (sortField === 'view_count') {
+        aVal = aVal || 0;
+        bVal = bVal || 0;
+      }
+      
+      if (sortField === 'title') {
+        aVal = (aVal || '').toLowerCase();
+        bVal = (bVal || '').toLowerCase();
+      }
+      
+      if (sortOrder === 'asc') {
+        return aVal > bVal ? 1 : aVal < bVal ? -1 : 0;
+      } else {
+        return aVal < bVal ? 1 : aVal > bVal ? -1 : 0;
+      }
+    });
+    
+    setProjects(sortedProjects);
     setLoading(false);
+  };
+
+  useEffect(() => {
+    loadProjects();
+  }, [sortField, sortOrder]);
+
+  const handleSort = (field: SortField) => {
+    if (sortField === field) {
+      setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortField(field);
+      setSortOrder('desc');
+    }
   };
 
   const handleDelete = async (projectId: string, projectTitle: string) => {
@@ -69,6 +107,41 @@ export default function ProjectsPage() {
 
       {projects && projects.length > 0 ? (
         <div className="space-y-4">
+          {/* Sort Controls */}
+          <div className="flex gap-2 items-center text-sm">
+            <span className="text-muted-foreground">Sort by:</span>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => handleSort('view_count')}
+              className="h-8"
+            >
+              Views
+              <ArrowUpDown className="ml-1 h-3 w-3" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => handleSort('created_at')}
+              className="h-8"
+            >
+              Date
+              <ArrowUpDown className="ml-1 h-3 w-3" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => handleSort('title')}
+              className="h-8"
+            >
+              Title
+              <ArrowUpDown className="ml-1 h-3 w-3" />
+            </Button>
+            <span className="text-muted-foreground ml-2">
+              ({sortField} {sortOrder === 'asc' ? '↑' : '↓'})
+            </span>
+          </div>
+
           {projects.map((project) => {
             const displayImage = getProjectImageUrl(project.image_url, project.youtube_url);
             return (
@@ -114,7 +187,7 @@ export default function ProjectsPage() {
                           )}
                           <span>{new Date(project.created_at).toLocaleDateString()}</span>
                           {project.view_count !== null && project.view_count !== undefined && (
-                            <span>{project.view_count} {project.view_count === 1 ? 'view' : 'views'}</span>
+                            <span className="font-medium">{project.view_count} {project.view_count === 1 ? 'view' : 'views'}</span>
                           )}
                         </div>
                         <div className="flex gap-2 mt-2">
