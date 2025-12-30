@@ -35,6 +35,8 @@ jobs:
     name: QA Deployment
     runs-on: ubuntu-latest
     needs: check-ci-success
+    # Skip if Vercel credentials are not configured
+    if: ${{ secrets.VERCEL_TOKEN != '' }}
 
     steps:
       - name: Checkout code
@@ -254,6 +256,8 @@ jobs:
     environment:
       name: production
       url: https://divij.tech
+    # Skip if Vercel credentials are not configured
+    if: ${{ secrets.VERCEL_TOKEN != '' }}
 
     steps:
       - name: Checkout code

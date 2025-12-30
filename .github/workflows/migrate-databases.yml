@@ -12,6 +12,8 @@ jobs:
   migrate-qa:
     name: Apply Migrations to QA
     runs-on: ubuntu-latest
+    # Skip if required secrets are not configured (prevents failing workflow runs on forks/new repos)
+    if: ${{ secrets.SUPABASE_ACCESS_TOKEN != '' && secrets.SUPABASE_QA_PROJECT_REF != '' && secrets.SUPABASE_QA_DB_PASSWORD != '' }}
 
     steps:
       - name: Checkout code
@@ -67,6 +69,8 @@ jobs:
     environment:
       name: Production
       url: https://divij.tech
+    # Skip if required secrets are not configured
+    if: ${{ secrets.SUPABASE_ACCESS_TOKEN != '' && secrets.SUPABASE_PROD_PROJECT_REF != '' && secrets.SUPABASE_PROD_DB_PASSWORD != '' }}
 
     steps:
       - name: Checkout code
