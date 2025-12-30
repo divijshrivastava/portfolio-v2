@@ -8,16 +8,32 @@ import { createClient } from '@/lib/supabase/server';
 export const revalidate = 3600;
 
 export default async function Home() {
-  const supabase = await createClient();
+  let featuredProjects: any[] = [];
 
-  // Fetch featured projects
-  const { data: featuredProjects } = await supabase
-    .from('projects')
-    .select('*')
-    .eq('status', 'published')
-    .eq('featured', true)
-    .order('start_date', { ascending: false })
-    .limit(4);
+  try {
+    const supabase = await createClient();
+
+    // Fetch featured projects
+    const { data, error } = await supabase
+      .from('projects')
+      .select('*')
+      .eq('status', 'published')
+      .eq('featured', true)
+      .order('start_date', { ascending: false })
+      .limit(4);
+
+    if (error) {
+      console.error('Error fetching featured projects:', error);
+      // Continue with empty projects array instead of crashing
+      featuredProjects = [];
+    } else {
+      featuredProjects = data || [];
+    }
+  } catch (error) {
+    console.error('Error initializing Supabase client or fetching projects:', error);
+    // Continue with empty projects array instead of crashing
+    featuredProjects = [];
+  }
   return (
     <div className="min-h-screen">
       {/* Hero Section */}
