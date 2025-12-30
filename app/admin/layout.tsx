@@ -14,13 +14,13 @@ import {
 import { NavLink } from '@/components/admin/nav-link';
 
 const adminNav = [
-  { name: 'Dashboard', href: '/admin', icon: LayoutDashboard },
-  { name: 'Blogs', href: '/admin/blogs', icon: FileText },
-  { name: 'Projects', href: '/admin/projects', icon: Briefcase },
-  { name: 'Messages', href: '/admin/messages', icon: Mail },
-  { name: 'Analytics', href: '/admin/analytics', icon: BarChart3 },
-  { name: 'Activity', href: '/admin/activity', icon: Activity },
-  { name: 'Resume', href: '/admin/resume', icon: FileUp },
+  { name: 'Dashboard', href: '/admin', iconName: 'LayoutDashboard' },
+  { name: 'Blogs', href: '/admin/blogs', iconName: 'FileText' },
+  { name: 'Projects', href: '/admin/projects', iconName: 'Briefcase' },
+  { name: 'Messages', href: '/admin/messages', iconName: 'Mail' },
+  { name: 'Analytics', href: '/admin/analytics', iconName: 'BarChart3' },
+  { name: 'Activity', href: '/admin/activity', iconName: 'Activity' },
+  { name: 'Resume', href: '/admin/resume', iconName: 'FileUp' },
 ];
 
 export default async function AdminLayout({
@@ -79,7 +79,7 @@ export default async function AdminLayout({
           <aside className="lg:col-span-3">
             <nav className="space-y-1 sticky top-24">
               {adminNav.map((item) => (
-                <NavLink key={item.name} href={item.href} icon={item.icon}>
+                <NavLink key={item.name} href={item.href} iconName={item.iconName}>
                   {item.name}
                 </NavLink>
               ))}

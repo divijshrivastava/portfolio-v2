@@ -2,18 +2,44 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { LucideIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import {
+  LayoutDashboard,
+  FileText,
+  Briefcase,
+  Mail,
+  Activity,
+  FileUp,
+  BarChart3,
+  type LucideIcon,
+} from 'lucide-react';
+
+// Icon mapping to avoid passing components from server to client
+const iconMap: Record<string, LucideIcon> = {
+  LayoutDashboard,
+  FileText,
+  Briefcase,
+  Mail,
+  Activity,
+  FileUp,
+  BarChart3,
+};
 
 interface NavLinkProps {
   href: string;
-  icon: LucideIcon;
+  iconName: string;
   children: React.ReactNode;
 }
 
-export function NavLink({ href, icon: Icon, children }: NavLinkProps) {
+export function NavLink({ href, iconName, children }: NavLinkProps) {
   const pathname = usePathname();
   const isActive = pathname === href || (href !== '/admin' && pathname.startsWith(href));
+  const Icon = iconMap[iconName];
+
+  if (!Icon) {
+    console.warn(`Icon "${iconName}" not found in iconMap`);
+    return null;
+  }
 
   return (
     <Link
