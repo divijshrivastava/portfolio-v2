@@ -93,8 +93,12 @@ export async function POST(req: Request) {
       if (error) return NextResponse.json({ error: error.message }, { status: 500 });
       recipients = (data || []).map((r) => ({ subscriber_id: r.id, email: r.email }));
     } else if (audience.type === 'manual') {
-      const rawEmails = Array.isArray((audience as any).emails) ? (audience as any).emails : [];
-      const cleaned = uniq(rawEmails.map(normalizeEmail)).filter((e) => e && isValidEmail(e));
+      const rawEmails: unknown[] = Array.isArray((audience as any).emails) ? (audience as any).emails : [];
+      const cleaned = uniq(
+        rawEmails
+          .map((e) => (typeof e === 'string' ? e : String(e ?? '')))
+          .map(normalizeEmail)
+      ).filter((e) => e && isValidEmail(e));
       recipients = cleaned.map((email) => ({ subscriber_id: null, email }));
     } else {
       return NextResponse.json({ error: 'Unsupported audience type' }, { status: 400 });

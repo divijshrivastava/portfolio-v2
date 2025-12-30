@@ -46,6 +46,10 @@ export default async function NewsletterSendDetailPage({
     );
   }
 
+  // Supabase relationship typing can be array vs object depending on schema inference.
+  // Normalize to a single newsletter object for display.
+  const newsletter = Array.isArray((send as any).newsletters) ? (send as any).newsletters?.[0] : (send as any).newsletters;
+
   return (
     <div className="space-y-6">
       <div className="flex items-start justify-between gap-4 flex-wrap">
@@ -59,12 +63,12 @@ export default async function NewsletterSendDetailPage({
           <div>
             <h1 className="text-4xl font-bold tracking-tight">Send details</h1>
             <p className="text-muted-foreground mt-2">
-              {send.newsletters?.subject || '—'}
+              {newsletter?.subject || '—'}
             </p>
           </div>
         </div>
-        {send.newsletters?.id && (
-          <Link href={`/admin/newsletter/${send.newsletters.id}/send`}>
+        {newsletter?.id && (
+          <Link href={`/admin/newsletter/${newsletter.id}/send`}>
             <Button>Send again</Button>
           </Link>
         )}
