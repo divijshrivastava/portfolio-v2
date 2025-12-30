@@ -8,6 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Plus, Edit, Trash2, Eye, ExternalLink, Github, Youtube, ArrowUpDown } from 'lucide-react';
 import { getProjectImageUrl } from '@/lib/utils/youtube';
 import { MigrateProjectsButton } from '@/components/admin/migrate-projects-button';
+import { TableSkeleton } from '@/components/admin/loading-skeleton';
 
 type SortField = 'created_at' | 'view_count' | 'title';
 type SortOrder = 'asc' | 'desc';
@@ -80,8 +81,11 @@ export default function ProjectsPage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <p className="text-muted-foreground">Loading projects...</p>
+      <div className="space-y-8">
+        <div>
+          <div className="h-9 w-48 bg-muted animate-pulse rounded mb-2" />
+        </div>
+        <TableSkeleton rows={5} />
       </div>
     );
   }
@@ -89,9 +93,14 @@ export default function ProjectsPage() {
   const projectsNeedingMigration = projects?.filter(p => !p.slug).length || 0;
 
   return (
-    <div>
-      <div className="flex justify-between items-center mb-8">
-        <h2 className="text-3xl font-bold">Manage Projects</h2>
+    <div className="space-y-6">
+      <div className="flex justify-between items-center">
+        <div>
+          <h1 className="text-4xl font-bold tracking-tight">Manage Projects</h1>
+          <p className="text-muted-foreground mt-2">
+            {projects.length} project{projects.length !== 1 ? 's' : ''} total
+          </p>
+        </div>
         <div className="flex gap-2">
           {projectsNeedingMigration > 0 && (
             <MigrateProjectsButton count={projectsNeedingMigration} />

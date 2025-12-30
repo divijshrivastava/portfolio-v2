@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Activity, Trash2, Calendar, BarChart3 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
+import { TableSkeleton } from '@/components/admin/loading-skeleton';
 
 interface UserActivity {
   id: string;
@@ -67,14 +68,22 @@ export default function ActivityPage() {
   };
 
   if (isLoading) {
-    return <div>Loading...</div>;
+    return (
+      <div className="space-y-8">
+        <div>
+          <div className="h-9 w-48 bg-muted animate-pulse rounded mb-2" />
+          <div className="h-5 w-64 bg-muted animate-pulse rounded" />
+        </div>
+        <TableSkeleton rows={5} />
+      </div>
+    );
   }
 
   return (
-    <div>
-      <div className="flex items-center justify-between mb-8">
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-3xl font-bold">User Activity</h2>
+          <h1 className="text-4xl font-bold tracking-tight">User Activity</h1>
           <p className="text-muted-foreground mt-2">
             Total visits: {totalCount} (showing last 100)
           </p>

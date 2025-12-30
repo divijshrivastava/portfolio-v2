@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { FileText, Upload, Download, Trash2 } from 'lucide-react';
+import { TableSkeleton } from '@/components/admin/loading-skeleton';
 
 interface Resume {
   id: string;
@@ -143,12 +144,22 @@ export default function AdminResumePage() {
   };
 
   if (isLoading) {
-    return <div>Loading...</div>;
+    return (
+      <div className="space-y-8">
+        <div className="h-9 w-64 bg-muted animate-pulse rounded" />
+        <TableSkeleton rows={3} />
+      </div>
+    );
   }
 
   return (
-    <div>
-      <h2 className="text-3xl font-bold mb-8">Resume Management</h2>
+    <div className="space-y-6">
+      <div>
+        <h1 className="text-4xl font-bold tracking-tight">Resume Management</h1>
+        <p className="text-muted-foreground mt-2">
+          Upload and manage your resume files
+        </p>
+      </div>
 
       <Card className="mb-8">
         <CardHeader>

@@ -67,7 +67,13 @@
       "Bash(MIGRATIONS.md )",
       "Bash(SUPABASE-MIGRATIONS.md )",
       "Bash(SYNC-DATABASES.md )",
-      "Bash(SYNC-SETUP-GUIDE.md)"
+      "Bash(SYNC-SETUP-GUIDE.md)",
+      "Bash(git restore:*)",
+      "Bash(git diff:*)",
+      "WebFetch(domain:divij-qa.tech)",
+      "Bash(if [ -f .vercel/project.json ])",
+      "Bash(then cat .vercel/project.json)",
+      "Bash(else echo \"No .vercel/project.json found\")"
     ]
   }
 }

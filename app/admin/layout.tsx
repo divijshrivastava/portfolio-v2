@@ -1,5 +1,4 @@
 import { redirect } from 'next/navigation';
-import Link from 'next/link';
 import { createClient } from '@/lib/supabase/server';
 import { Button } from '@/components/ui/button';
 import {
@@ -12,6 +11,7 @@ import {
   LogOut,
   BarChart3,
 } from 'lucide-react';
+import { NavLink } from '@/components/admin/nav-link';
 
 const adminNav = [
   { name: 'Dashboard', href: '/admin', icon: LayoutDashboard },
@@ -47,43 +47,50 @@ export default async function AdminLayout({
   }
 
   return (
-    <div className="min-h-screen">
-      <div className="border-b bg-background">
+    <div className="min-h-screen bg-background">
+      {/* Header */}
+      <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">
-            <h1 className="text-xl font-bold">Admin Panel</h1>
+          <div className="flex h-16 items-center justify-between">
+            <div className="flex items-center gap-2">
+              <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center">
+                <LayoutDashboard className="h-5 w-5 text-primary" />
+              </div>
+              <div>
+                <h1 className="text-xl font-bold">Admin Panel</h1>
+                <p className="text-xs text-muted-foreground hidden sm:block">
+                  Portfolio Management
+                </p>
+              </div>
+            </div>
             <form action="/api/auth/logout" method="POST">
-              <Button type="submit" variant="ghost" size="sm">
-                <LogOut className="mr-2 h-4 w-4" />
-                Logout
+              <Button type="submit" variant="ghost" size="sm" className="gap-2">
+                <LogOut className="h-4 w-4" />
+                <span className="hidden sm:inline">Logout</span>
               </Button>
             </form>
           </div>
         </div>
-      </div>
+      </header>
 
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-          <aside className="md:col-span-1">
-            <nav className="space-y-1">
-              {adminNav.map((item) => {
-                const Icon = item.icon;
-                return (
-                  <Link
-                    key={item.name}
-                    href={item.href}
-                    className="flex items-center gap-3 px-3 py-2 rounded-md hover:bg-accent transition-colors"
-                  >
-                    <Icon className="h-5 w-5" />
-                    <span>{item.name}</span>
-                  </Link>
-                );
-              })}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+          {/* Sidebar Navigation */}
+          <aside className="lg:col-span-3">
+            <nav className="space-y-1 sticky top-24">
+              {adminNav.map((item) => (
+                <NavLink key={item.name} href={item.href} icon={item.icon}>
+                  {item.name}
+                </NavLink>
+              ))}
             </nav>
           </aside>
 
-          <main className="md:col-span-3">
-            {children}
+          {/* Main Content */}
+          <main className="lg:col-span-9">
+            <div className="min-h-[calc(100vh-12rem)]">
+              {children}
+            </div>
           </main>
         </div>
       </div>

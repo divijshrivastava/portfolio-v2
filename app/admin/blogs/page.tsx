@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Plus, Edit, Trash2, Eye, ArrowUpDown } from 'lucide-react';
+import { TableSkeleton } from '@/components/admin/loading-skeleton';
 
 type SortField = 'created_at' | 'view_count' | 'title';
 type SortOrder = 'asc' | 'desc';
@@ -77,16 +78,24 @@ export default function BlogsPage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <p className="text-muted-foreground">Loading blogs...</p>
+      <div className="space-y-8">
+        <div>
+          <div className="h-9 w-48 bg-muted animate-pulse rounded mb-2" />
+        </div>
+        <TableSkeleton rows={5} />
       </div>
     );
   }
 
   return (
-    <div>
-      <div className="flex justify-between items-center mb-8">
-        <h2 className="text-3xl font-bold">Manage Blogs</h2>
+    <div className="space-y-6">
+      <div className="flex justify-between items-center">
+        <div>
+          <h1 className="text-4xl font-bold tracking-tight">Manage Blogs</h1>
+          <p className="text-muted-foreground mt-2">
+            {blogs.length} blog post{blogs.length !== 1 ? 's' : ''} total
+          </p>
+        </div>
         <Button asChild>
           <Link href="/admin/blogs/new">
             <Plus className="mr-2 h-4 w-4" />
