@@ -1,6 +1,6 @@
 import { createAdminClient } from '@/lib/supabase/admin';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { FileText, Briefcase, Mail, Activity, Eye, ArrowRight, TrendingUp } from 'lucide-react';
+import { FileText, Briefcase, Mail, MailPlus, Activity, Eye, ArrowRight, TrendingUp } from 'lucide-react';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
 
@@ -12,13 +12,15 @@ export default async function AdminDashboard() {
     { count: projectsCount },
     { count: professionalProjectsCount },
     { count: messagesCount },
-    { count: activityCount }
+    { count: activityCount },
+    { count: subscribersCount },
   ] = await Promise.all([
     supabase.from('blogs').select('*', { count: 'exact', head: true }),
     supabase.from('projects').select('*', { count: 'exact', head: true }),
     supabase.from('projects').select('*', { count: 'exact', head: true }).eq('project_type', 'professional'),
     supabase.from('messages').select('*', { count: 'exact', head: true }),
     supabase.from('user_activity').select('*', { count: 'exact', head: true }),
+    supabase.from('newsletter_subscribers').select('*', { count: 'exact', head: true }),
   ]);
 
   const { count: unreadMessages } = await supabase
@@ -88,6 +90,14 @@ export default async function AdminDashboard() {
       highlight: unreadMessages && unreadMessages > 0
     },
     { 
+      name: 'Newsletter Subscribers', 
+      value: subscribersCount || 0, 
+      icon: MailPlus, 
+      href: '/admin/newsletter',
+      color: 'text-pink-500',
+      bgColor: 'bg-pink-500/10'
+    },
+    { 
       name: 'Total Page Views', 
       value: totalPageViews.toLocaleString(), 
       icon: Eye, 
@@ -108,7 +118,7 @@ export default async function AdminDashboard() {
       </div>
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-4">
         {stats.map((stat) => {
           const Icon = stat.icon;
           const StatCard = (

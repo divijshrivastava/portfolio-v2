@@ -18,6 +18,7 @@ const adminNav = [
   { name: 'Blogs', href: '/admin/blogs', iconName: 'FileText' },
   { name: 'Projects', href: '/admin/projects', iconName: 'Briefcase' },
   { name: 'Messages', href: '/admin/messages', iconName: 'Mail' },
+  { name: 'Newsletter', href: '/admin/newsletter', iconName: 'MailPlus' },
   { name: 'Analytics', href: '/admin/analytics', iconName: 'BarChart3' },
   { name: 'Activity', href: '/admin/activity', iconName: 'Activity' },
   { name: 'Resume', href: '/admin/resume', iconName: 'FileUp' },
