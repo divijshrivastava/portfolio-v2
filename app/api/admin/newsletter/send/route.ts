@@ -79,6 +79,7 @@ export async function POST(req: Request) {
       const { data, error } = await admin
         .from('newsletter_subscribers')
         .select('id, email')
+        .is('unsubscribed_at', null)
         .order('created_at', { ascending: true });
       if (error) return NextResponse.json({ error: error.message }, { status: 500 });
       recipients = (data || []).map((r) => ({ subscriber_id: r.id, email: r.email }));
@@ -88,6 +89,7 @@ export async function POST(req: Request) {
       const { data, error } = await admin
         .from('newsletter_subscribers')
         .select('id, email')
+        .is('unsubscribed_at', null)
         .eq('source', source)
         .order('created_at', { ascending: true });
       if (error) return NextResponse.json({ error: error.message }, { status: 500 });

@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { serve } from "https://deno.land/std/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.89.0";
 
@@ -34,6 +35,7 @@ function renderNewsletterEmail(input: {
   previewText?: string | null;
   bodyHtml: string;
   attachments: any[];
+  unsubscribeUrl?: string | null;
 }) {
   const siteUrl = getSiteUrl().replace(/\/$/, "");
 
@@ -68,6 +70,19 @@ function renderNewsletterEmail(input: {
     : "";
 
   const preview = input.previewText ? `<p style="color:#666;margin:0 0 16px 0;">${input.previewText}</p>` : "";
+  const unsubscribeUrl = input.unsubscribeUrl ? String(input.unsubscribeUrl) : "";
+  const unsubscribeBlock = unsubscribeUrl
+    ? `
+      <div style="margin-top:24px;">
+        <a
+          href="${unsubscribeUrl}"
+          style="display:inline-block;padding:10px 14px;border-radius:8px;border:1px solid #ddd;text-decoration:none;color:#111;font-size:14px;"
+        >
+          Unsubscribe
+        </a>
+      </div>
+    `
+    : "";
 
   return `
     <div style="font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial; line-height:1.5; color:#111;">
@@ -78,6 +93,7 @@ function renderNewsletterEmail(input: {
           ${input.bodyHtml}
         </div>
         ${attachmentsBlock}
+        ${unsubscribeBlock}
         <hr style="margin:24px 0;border:none;border-top:1px solid #eee;" />
         <p style="color:#666;font-size:12px;margin:0;">
           You’re receiving this because you subscribed on ${siteUrl}.
@@ -148,39 +164,59 @@ serve(async (req) => {
 
     const audience = sendRow.audience as Audience;
 
-    let recipients: { subscriber_id: string | null; email: string }[] = [];
+    let recipients: { subscriber_id: string | null; email: string; unsubscribe_token?: string | null }[] = [];
     if (audience?.type === "all") {
       const { data, error } = await supabase
         .from("newsletter_subscribers")
-        .select("id, email")
+        .select("id, email, unsubscribe_token")
+        .is("unsubscribed_at", null)
         .order("created_at", { ascending: true });
       if (error) throw error;
-      recipients = (data || []).map((r: any) => ({ subscriber_id: r.id, email: r.email }));
+      recipients = (data || []).map((r: any) => ({
+        subscriber_id: r.id,
+        email: r.email,
+        unsubscribe_token: r.unsubscribe_token ?? null,
+      }));
     } else if (audience?.type === "source") {
       const source = String((audience as any).source || "").trim();
       const { data, error } = await supabase
         .from("newsletter_subscribers")
-        .select("id, email")
+        .select("id, email, unsubscribe_token")
+        .is("unsubscribed_at", null)
         .eq("source", source)
         .order("created_at", { ascending: true });
       if (error) throw error;
-      recipients = (data || []).map((r: any) => ({ subscriber_id: r.id, email: r.email }));
+      recipients = (data || []).map((r: any) => ({
+        subscriber_id: r.id,
+        email: r.email,
+        unsubscribe_token: r.unsubscribe_token ?? null,
+      }));
     } else if (audience?.type === "manual") {
       const rawEmails = Array.isArray((audience as any).emails) ? (audience as any).emails : [];
-      const cleaned = uniq(rawEmails.map(normalizeEmail)).filter((e) => e && isValidEmail(e));
+      const cleaned = uniq(
+        rawEmails
+          .map((e: any) => (typeof e === "string" ? e : String(e ?? "")))
+          .map(normalizeEmail)
+      ).filter((e) => e && isValidEmail(e));
       recipients = cleaned.map((email) => ({ subscriber_id: null, email }));
     } else {
       return new Response("Unsupported audience type", { status: 400 });
     }
 
     // Dedupe + validate
-    const byEmail = new Map<string, { subscriber_id: string | null; email: string }>();
+    const byEmail = new Map<string, { subscriber_id: string | null; email: string; unsubscribe_token?: string | null }>();
     for (const r of recipients) {
       const e = normalizeEmail(r.email);
       if (!e || !isValidEmail(e)) continue;
-      if (!byEmail.has(e)) byEmail.set(e, { subscriber_id: r.subscriber_id, email: e });
+      if (!byEmail.has(e)) byEmail.set(e, { subscriber_id: r.subscriber_id, email: e, unsubscribe_token: r.unsubscribe_token ?? null });
     }
     recipients = Array.from(byEmail.values());
+
+    const siteUrl = getSiteUrl().replace(/\/$/, "");
+    const tokenByEmail = new Map<string, string>();
+    for (const r of recipients) {
+      if (r.unsubscribe_token) tokenByEmail.set(normalizeEmail(r.email), String(r.unsubscribe_token));
+    }
 
     // Seed deliveries (upsert-ish via insert + ignore conflicts)
     if (recipients.length > 0) {
@@ -212,13 +248,6 @@ serve(async (req) => {
       .limit(5000);
     if (pendingErr) throw pendingErr;
 
-    const html = renderNewsletterEmail({
-      subject: newsletter.subject,
-      previewText: newsletter.preview_text,
-      bodyHtml: newsletter.body_html,
-      attachments: newsletter.attachments || [],
-    });
-
     let sentCount = 0;
     let failedCount = 0;
     const concurrency = 5;
@@ -229,6 +258,18 @@ serve(async (req) => {
         const i = idx++;
         const d = (pending as any[])[i];
         try {
+          const emailNorm = normalizeEmail(String(d.email || ""));
+          const token = tokenByEmail.get(emailNorm);
+          const unsubscribeUrl = token ? `${siteUrl}/unsubscribe?token=${encodeURIComponent(token)}` : `${siteUrl}/newsletter`;
+
+          const html = renderNewsletterEmail({
+            subject: newsletter.subject,
+            previewText: newsletter.preview_text,
+            bodyHtml: newsletter.body_html,
+            attachments: newsletter.attachments || [],
+            unsubscribeUrl,
+          });
+
           const resp = await sendResendEmail({ to: d.email, subject: newsletter.subject, html });
           sentCount++;
           await supabase

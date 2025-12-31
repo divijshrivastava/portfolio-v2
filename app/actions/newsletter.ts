@@ -186,6 +186,29 @@ export async function subscribeToNewsletter(input: NewsletterSubscribeInput) {
     // Unique violation -> treat as success (already subscribed)
     if (error) {
       if (error.code === '23505') {
+        // If they were previously unsubscribed, treat this as a resubscribe.
+        // (Requires `unsubscribed_at` column from migrations; safe to attempt.)
+        const { data: updated, error: updateErr } = await supabase
+          .from('newsletter_subscribers')
+          .update({
+            unsubscribed_at: null,
+            ip_address: ipAddress,
+            source,
+          })
+          .eq('email', email)
+          .select('id, unsubscribed_at')
+          .single();
+
+        if (!updateErr && updated) {
+          try {
+            await updateRateLimit(ipAddress);
+          } catch (rateLimitError: any) {
+            console.error('Newsletter rate limit update failed:', rateLimitError);
+          }
+
+          return { success: true, message: `You're subscribed.` };
+        }
+
         try {
           await updateRateLimit(ipAddress);
         } catch (rateLimitError: any) {
@@ -209,6 +232,38 @@ export async function subscribeToNewsletter(input: NewsletterSubscribeInput) {
   } catch (error) {
     console.error('Newsletter subscribe error:', error);
     return { success: false, error: 'An unexpected error occurred. Please try again.' };
+  }
+}
+
+export async function unsubscribeFromNewsletter(input: { token: string }) {
+  try {
+    const token = (input.token || '').trim();
+    if (!token) {
+      return { success: false, error: 'Missing unsubscribe token.' };
+    }
+
+    const supabase = createAdminClient();
+    const { data, error } = await supabase
+      .from('newsletter_subscribers')
+      .update({ unsubscribed_at: new Date().toISOString() })
+      .eq('unsubscribe_token', token)
+      .is('unsubscribed_at', null)
+      .select('id')
+      .maybeSingle();
+
+    if (error) {
+      console.error('Unsubscribe error:', error);
+      return { success: false, error: 'Failed to unsubscribe. Please try again.' };
+    }
+
+    if (!data) {
+      return { success: true, message: 'You are already unsubscribed (or the link is invalid).' };
+    }
+
+    return { success: true, message: 'Unsubscribed. You will no longer receive emails.' };
+  } catch (e: any) {
+    console.error('Unsubscribe error:', e);
+    return { success: false, error: String(e?.message || e) };
   }
 }
 
