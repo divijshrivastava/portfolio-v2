@@ -43,6 +43,7 @@ export default function EditNewsletterPage() {
   const [bodyHtml, setBodyHtml] = useState('');
   const [attachments, setAttachments] = useState<Attachment[]>([]);
   const [status, setStatus] = useState<'draft' | 'published'>('draft');
+  const [isPublic, setIsPublic] = useState(false);
 
   const [blogs, setBlogs] = useState<BlogOption[]>([]);
   const [projects, setProjects] = useState<ProjectOption[]>([]);
@@ -56,7 +57,7 @@ export default function EditNewsletterPage() {
       setIsLoading(true);
       const { data, error } = await supabase
         .from('newsletters')
-        .select('id, subject, preview_text, body_html, attachments, status')
+        .select('id, subject, preview_text, body_html, attachments, status, is_public')
         .eq('id', newsletterId)
         .single();
 
@@ -72,6 +73,7 @@ export default function EditNewsletterPage() {
       setBodyHtml(data.body_html ?? '');
       setAttachments((data.attachments as any) || []);
       setStatus(data.status);
+      setIsPublic(data.is_public ?? false);
       setIsLoading(false);
     };
 
@@ -132,6 +134,7 @@ export default function EditNewsletterPage() {
         preview_text: previewText.trim() || null,
         body_html: bodyHtml,
         attachments,
+        is_public: isPublic,
       })
       .eq('id', newsletterId);
     setIsSaving(false);
@@ -253,6 +256,23 @@ export default function EditNewsletterPage() {
               placeholder="Short preview snippet..."
               rows={3}
             />
+          </div>
+          <div className="flex items-start gap-3 p-4 border rounded-lg bg-muted/30">
+            <input
+              type="checkbox"
+              id="is-public"
+              checked={isPublic}
+              onChange={(e) => setIsPublic(e.target.checked)}
+              className="mt-1 h-4 w-4"
+            />
+            <div className="flex-1">
+              <label htmlFor="is-public" className="text-sm font-medium cursor-pointer block">
+                Show in public archive
+              </label>
+              <p className="text-xs text-muted-foreground mt-1">
+                When enabled, this newsletter will appear on <a href="/newsletters" target="_blank" className="underline">/newsletters</a> for anyone to read. Only published newsletters can be made public.
+              </p>
+            </div>
           </div>
         </CardContent>
       </Card>
