@@ -64,9 +64,16 @@ jobs:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
         run: |
           echo "Setting up cron schedule for process-scheduled-newsletters (every minute)"
-          supabase functions schedule process-scheduled-newsletters \
-            --cron "* * * * *" \
-            --project-ref ${{ secrets.SUPABASE_QA_PROJECT_REF }}
+          curl -X PATCH \
+            "https://api.supabase.com/v1/projects/${{ secrets.SUPABASE_QA_PROJECT_REF }}/functions/process-scheduled-newsletters" \
+            -H "Authorization: Bearer ${{ secrets.SUPABASE_ACCESS_TOKEN }}" \
+            -H "Content-Type: application/json" \
+            -d '{
+              "verify_jwt": false,
+              "import_map": false,
+              "cron_schedule": "* * * * *"
+            }'
+          echo "Cron schedule configured successfully"
 
   deploy-production:
     name: Deploy Edge Functions to Production
@@ -127,8 +134,15 @@ jobs:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
         run: |
           echo "Setting up cron schedule for process-scheduled-newsletters (every minute)"
-          supabase functions schedule process-scheduled-newsletters \
-            --cron "* * * * *" \
-            --project-ref ${{ secrets.SUPABASE_PROD_PROJECT_REF }}
+          curl -X PATCH \
+            "https://api.supabase.com/v1/projects/${{ secrets.SUPABASE_PROD_PROJECT_REF }}/functions/process-scheduled-newsletters" \
+            -H "Authorization: Bearer ${{ secrets.SUPABASE_ACCESS_TOKEN }}" \
+            -H "Content-Type: application/json" \
+            -d '{
+              "verify_jwt": false,
+              "import_map": false,
+              "cron_schedule": "* * * * *"
+            }'
+          echo "Cron schedule configured successfully"
 
 
