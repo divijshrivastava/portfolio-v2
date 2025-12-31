@@ -32,6 +32,7 @@ export default function SendNewsletterPage() {
   const [isScheduled, setIsScheduled] = useState(false);
   const [scheduledDate, setScheduledDate] = useState('');
   const [scheduledTime, setScheduledTime] = useState('');
+  const userTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
 
   useEffect(() => {
     const load = async () => {
@@ -278,7 +279,7 @@ export default function SendNewsletterPage() {
               </div>
               <div>
                 <label className="text-sm font-medium block mb-1">
-                  Time (your local timezone)
+                  Time ({userTimezone})
                 </label>
                 <Input
                   type="time"
@@ -294,10 +295,6 @@ export default function SendNewsletterPage() {
               Newsletter will be sent at{' '}
               <span className="font-medium">
                 {new Date(`${scheduledDate}T${scheduledTime}`).toLocaleString()}
-              </span>
-              {' '}
-              <span className="text-xs">
-                ({Intl.DateTimeFormat().resolvedOptions().timeZone})
               </span>
             </p>
           )}
