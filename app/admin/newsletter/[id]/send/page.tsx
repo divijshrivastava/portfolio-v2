@@ -317,9 +317,14 @@ export default function SendNewsletterPage() {
             <Button type="button" variant="outline" onClick={computeRecipientCount}>
               Preview Recipients
             </Button>
-            {recipientCount !== null && (
+            {recipients.length > 0 && (
               <span className="text-sm text-muted-foreground font-medium">
-                {recipientCount} {recipientCount === 1 ? 'recipient' : 'recipients'}
+                {includedCount} {includedCount === 1 ? 'recipient' : 'recipients'}
+                {excludedEmails.size > 0 && (
+                  <span className="text-destructive ml-1">
+                    ({excludedEmails.size} excluded)
+                  </span>
+                )}
               </span>
             )}
           </div>
