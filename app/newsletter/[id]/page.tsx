@@ -6,18 +6,19 @@ import { notFound } from 'next/navigation';
 import { Metadata } from 'next';
 
 interface NewsletterPageProps {
-  params: {
+  params: Promise<{
     id: string;
-  };
+  }>;
 }
 
 export async function generateMetadata({ params }: NewsletterPageProps): Promise<Metadata> {
+  const { id } = await params;
   const supabase = await createClient();
   
   const { data: newsletter } = await supabase
     .from('newsletters')
     .select('subject, preview_text')
-    .eq('id', params.id)
+    .eq('id', id)
     .eq('is_public', true)
     .eq('status', 'published')
     .single();
@@ -40,12 +41,13 @@ export async function generateMetadata({ params }: NewsletterPageProps): Promise
 }
 
 export default async function NewsletterPage({ params }: NewsletterPageProps) {
+  const { id } = await params;
   const supabase = await createClient();
 
   const { data: newsletter, error } = await supabase
     .from('newsletters')
     .select('*')
-    .eq('id', params.id)
+    .eq('id', id)
     .eq('is_public', true)
     .eq('status', 'published')
     .single();
