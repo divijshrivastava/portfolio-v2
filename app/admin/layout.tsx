@@ -12,6 +12,7 @@ import {
   BarChart3,
 } from 'lucide-react';
 import { NavLink } from '@/components/admin/nav-link';
+import { NotificationBell } from '@/components/admin/notification-bell';
 
 const adminNav = [
   { name: 'Dashboard', href: '/admin', iconName: 'LayoutDashboard' },
@@ -64,12 +65,15 @@ export default async function AdminLayout({
                 </p>
               </div>
             </div>
-            <form action="/api/auth/logout" method="POST">
-              <Button type="submit" variant="ghost" size="sm" className="gap-2">
-                <LogOut className="h-4 w-4" />
-                <span className="hidden sm:inline">Logout</span>
-              </Button>
-            </form>
+            <div className="flex items-center gap-2">
+              <NotificationBell />
+              <form action="/api/auth/logout" method="POST">
+                <Button type="submit" variant="ghost" size="sm" className="gap-2">
+                  <LogOut className="h-4 w-4" />
+                  <span className="hidden sm:inline">Logout</span>
+                </Button>
+              </form>
+            </div>
           </div>
         </div>
       </header>
