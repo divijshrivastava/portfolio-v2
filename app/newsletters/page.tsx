@@ -99,23 +99,6 @@ export default async function NewslettersArchivePage() {
           </div>
         )}
 
-        {/* Subscribe CTA at bottom */}
-        {newsletters && newsletters.length > 0 && (
-          <Card className="bg-primary/5 border-primary/20">
-            <CardContent className="p-8 text-center space-y-4">
-              <h3 className="text-2xl font-bold">Like what you see?</h3>
-              <p className="text-muted-foreground">
-                Get new newsletters delivered straight to your inbox.
-              </p>
-              <Link href="/newsletter">
-                <Button size="lg" className="gap-2">
-                  <Mail className="h-5 w-5" />
-                  Subscribe Now
-                </Button>
-              </Link>
-            </CardContent>
-          </Card>
-        )}
       </div>
     </div>
   );
