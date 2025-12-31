@@ -46,6 +46,34 @@ export default function NewNewsletterPage() {
 
   const [isSaving, setIsSaving] = useState(false);
 
+  const handleImageUpload = async (file: File): Promise<string> => {
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      // Reuse existing storage bucket used by blog editor uploads.
+      formData.append('bucket', 'blog-images');
+
+      const response = await fetch('/api/upload/image', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!response.ok) {
+        const error = await response.json().catch(() => ({}));
+        console.error('Upload error:', error);
+        alert((error as any).error || 'Failed to upload image');
+        return '';
+      }
+
+      const data = await response.json();
+      return data.url;
+    } catch (error) {
+      console.error('Upload error:', error);
+      alert('Failed to upload image');
+      return '';
+    }
+  };
+
   useEffect(() => {
     const load = async () => {
       const [{ data: blogsData }, { data: projectsData }] = await Promise.all([
@@ -163,7 +191,12 @@ export default function NewNewsletterPage() {
           <CardTitle>Content</CardTitle>
         </CardHeader>
         <CardContent>
-          <TiptapEditor content={bodyHtml} onChange={setBodyHtml} />
+          <TiptapEditor
+            content={bodyHtml}
+            onChange={setBodyHtml}
+            onImageUpload={handleImageUpload}
+            placeholder="Start writing your newsletter..."
+          />
         </CardContent>
       </Card>
 

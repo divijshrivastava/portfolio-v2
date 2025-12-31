@@ -32,9 +32,10 @@ interface TiptapEditorProps {
   content: string;
   onChange: (html: string) => void;
   onImageUpload?: (file: File) => Promise<string>;
+  placeholder?: string;
 }
 
-export function TiptapEditor({ content, onChange, onImageUpload }: TiptapEditorProps) {
+export function TiptapEditor({ content, onChange, onImageUpload, placeholder }: TiptapEditorProps) {
   const editor = useEditor({
     immediatelyRender: false,
     extensions: [
@@ -54,7 +55,7 @@ export function TiptapEditor({ content, onChange, onImageUpload }: TiptapEditorP
         },
       }),
       Placeholder.configure({
-        placeholder: 'Start writing your blog post...',
+        placeholder: placeholder || 'Start writing...',
       }),
       Underline,
       TextAlign.configure({
