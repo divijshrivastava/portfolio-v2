@@ -9,7 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { ArrowLeft, Plus, Save, Send, UploadCloud } from 'lucide-react';
+import { ArrowLeft, Plus, Save, Send, UploadCloud, Trash2 } from 'lucide-react';
 
 type Attachment =
   | { type: 'blog'; id: string; title: string; slug: string }
@@ -37,6 +37,7 @@ export default function EditNewsletterPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [isPublishing, setIsPublishing] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const [subject, setSubject] = useState('');
   const [previewText, setPreviewText] = useState('');
@@ -169,6 +170,28 @@ export default function EditNewsletterPage() {
     setStatus('published');
   };
 
+  const handleDelete = async () => {
+    if (!confirm('Are you sure you want to delete this newsletter? This will also delete all send history and deliveries. This action cannot be undone.')) {
+      return;
+    }
+    
+    setIsDeleting(true);
+    const { error } = await supabase
+      .from('newsletters')
+      .delete()
+      .eq('id', newsletterId);
+    
+    setIsDeleting(false);
+
+    if (error) {
+      console.error('Failed to delete newsletter:', error);
+      alert(`Failed to delete newsletter: ${error.message}`);
+      return;
+    }
+
+    router.push('/admin/newsletter/list');
+  };
+
   const removeAttachment = (idx: number) => {
     setAttachments((prev) => prev.filter((_, i) => i !== idx));
   };
@@ -221,7 +244,12 @@ export default function EditNewsletterPage() {
             <p className="text-muted-foreground mt-2">Status: {status}</p>
           </div>
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-2 flex-wrap">
+          <Button variant="destructive" onClick={handleDelete} disabled={isDeleting} size="sm">
+            <Trash2 className="h-4 w-4 mr-2" />
+            {isDeleting ? 'Deleting...' : 'Delete'}
+          </Button>
+          <div className="flex-1" />
           <Button variant="outline" onClick={handleSave} disabled={isSaving}>
             <Save className="h-4 w-4 mr-2" />
             {isSaving ? 'Saving...' : 'Save'}

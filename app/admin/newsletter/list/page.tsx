@@ -1,23 +1,86 @@
+'use client';
+
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { createAdminClient } from '@/lib/supabase/admin';
+import { createClient } from '@/lib/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Calendar, FileText, Pencil, Send } from 'lucide-react';
+import { Calendar, FileText, Pencil, Send, Trash2 } from 'lucide-react';
 
-export default async function NewsletterListPage() {
-  const supabase = createAdminClient();
+interface Newsletter {
+  id: string;
+  subject: string;
+  status: string;
+  created_at: string;
+  published_at: string | null;
+  updated_at: string;
+}
 
-  const { data: newsletters, error } = await supabase
-    .from('newsletters')
-    .select('id, subject, status, created_at, published_at, updated_at')
-    .order('created_at', { ascending: false })
-    .limit(50);
+export default function NewsletterListPage() {
+  const [newsletters, setNewsletters] = useState<Newsletter[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+
+  useEffect(() => {
+    loadNewsletters();
+  }, []);
+
+  const loadNewsletters = async () => {
+    const supabase = createClient();
+    const { data, error } = await supabase
+      .from('newsletters')
+      .select('id, subject, status, created_at, published_at, updated_at')
+      .order('created_at', { ascending: false })
+      .limit(50);
+
+    if (error) {
+      setError(error.message);
+    } else {
+      setNewsletters(data || []);
+    }
+    setIsLoading(false);
+  };
+
+  const handleDelete = async (id: string, subject: string) => {
+    if (!confirm(`Are you sure you want to delete "${subject}"? This will also delete all send history and deliveries. This action cannot be undone.`)) {
+      return;
+    }
+
+    setDeletingId(id);
+    const supabase = createClient();
+    const { error } = await supabase
+      .from('newsletters')
+      .delete()
+      .eq('id', id);
+
+    setDeletingId(null);
+
+    if (error) {
+      console.error('Failed to delete newsletter:', error);
+      alert(`Failed to delete newsletter: ${error.message}`);
+      return;
+    }
+
+    // Remove from local state
+    setNewsletters((prev) => prev.filter((n) => n.id !== id));
+  };
+
+  if (isLoading) {
+    return (
+      <div className="space-y-4">
+        <div className="h-10 w-64 bg-muted animate-pulse rounded" />
+        <div className="h-5 w-96 bg-muted animate-pulse rounded" />
+        <div className="h-64 bg-muted animate-pulse rounded" />
+      </div>
+    );
+  }
 
   if (error) {
     return (
       <div className="space-y-4">
         <h1 className="text-4xl font-bold tracking-tight">Newsletters</h1>
-        <p className="text-destructive">Failed to load newsletters: {error.message}</p>
+        <p className="text-destructive">Failed to load newsletters: {error}</p>
       </div>
     );
   }
@@ -84,6 +147,14 @@ export default async function NewsletterListPage() {
                               Send
                             </Button>
                           </Link>
+                          <Button
+                            variant="destructive"
+                            size="sm"
+                            onClick={() => handleDelete(n.id, n.subject)}
+                            disabled={deletingId === n.id}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
                         </div>
                       </td>
                     </tr>
