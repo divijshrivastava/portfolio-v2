@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { FileText, Briefcase, Mail, MailPlus, Activity, Eye, ArrowRight, TrendingUp } from 'lucide-react';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
+import { DataExport } from '@/components/admin/data-export';
 
 export default async function AdminDashboard() {
   const supabase = createAdminClient();
@@ -293,6 +294,9 @@ export default async function AdminDashboard() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Data Export & Backup */}
+      <DataExport />
     </div>
   );
 }
