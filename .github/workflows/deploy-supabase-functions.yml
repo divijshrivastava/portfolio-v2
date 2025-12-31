@@ -1,0 +1,54 @@
+name: Deploy Supabase Edge Functions (QA)
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'supabase/functions/**'
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  deploy-qa:
+    name: Deploy Edge Functions to QA
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Check required secrets (QA)
+        id: secrets
+        shell: bash
+        run: |
+          if [ -z "${{ secrets.SUPABASE_ACCESS_TOKEN }}" ] || [ -z "${{ secrets.SUPABASE_QA_PROJECT_REF }}" ]; then
+            echo "⚠️ Missing required Supabase secrets. Skipping function deploy."
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Setup Supabase CLI
+        if: ${{ steps.secrets.outputs.skip != 'true' }}
+        uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Link to QA Supabase
+        if: ${{ steps.secrets.outputs.skip != 'true' }}
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+        run: |
+          supabase link --project-ref ${{ secrets.SUPABASE_QA_PROJECT_REF }}
+
+      - name: Deploy send-newsletter (QA)
+        if: ${{ steps.secrets.outputs.skip != 'true' }}
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+        run: |
+          supabase functions deploy send-newsletter --no-verify-jwt
+
+
