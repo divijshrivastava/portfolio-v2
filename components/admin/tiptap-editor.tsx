@@ -28,6 +28,122 @@ import {
   AlignRight,
 } from 'lucide-react';
 
+// Custom resizable image extension with drag-to-resize
+const ResizableImage = Image.extend({
+  addAttributes() {
+    return {
+      ...this.parent?.(),
+      width: {
+        default: null,
+        parseHTML: element => element.getAttribute('width'),
+        renderHTML: attributes => {
+          if (!attributes.width) return {};
+          return { width: attributes.width };
+        },
+      },
+      height: {
+        default: null,
+        parseHTML: element => element.getAttribute('height'),
+        renderHTML: attributes => {
+          if (!attributes.height) return {};
+          return { height: attributes.height };
+        },
+      },
+    };
+  },
+
+  addNodeView() {
+    return ({ node, editor, getPos }) => {
+      const container = document.createElement('div');
+      container.className = 'resizable-image-container';
+      container.style.cssText = 'position: relative; display: inline-block; max-width: 100%;';
+
+      const img = document.createElement('img');
+      img.src = node.attrs.src;
+      img.alt = node.attrs.alt || '';
+      img.title = node.attrs.title || '';
+      if (node.attrs.width) img.width = parseInt(node.attrs.width);
+      if (node.attrs.height) img.height = parseInt(node.attrs.height);
+      img.style.cssText = 'max-width: 100%; height: auto; display: block; cursor: pointer;';
+
+      const resizeHandle = document.createElement('div');
+      resizeHandle.className = 'resize-handle';
+      resizeHandle.style.cssText = `
+        position: absolute;
+        bottom: 0;
+        right: 0;
+        width: 20px;
+        height: 20px;
+        background: hsl(var(--primary));
+        cursor: nwse-resize;
+        border-radius: 2px;
+        opacity: 0;
+        transition: opacity 0.2s;
+      `;
+
+      container.appendChild(img);
+      container.appendChild(resizeHandle);
+
+      // Show handle on hover
+      container.addEventListener('mouseenter', () => {
+        resizeHandle.style.opacity = '0.8';
+      });
+      container.addEventListener('mouseleave', () => {
+        resizeHandle.style.opacity = '0';
+      });
+
+      // Resize functionality
+      let isResizing = false;
+      let startX = 0;
+      let startWidth = 0;
+
+      resizeHandle.addEventListener('mousedown', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        isResizing = true;
+        startX = e.clientX;
+        startWidth = img.width || img.offsetWidth;
+        resizeHandle.style.opacity = '1';
+        document.body.style.cursor = 'nwse-resize';
+      });
+
+      const handleMouseMove = (e: MouseEvent) => {
+        if (!isResizing) return;
+        const deltaX = e.clientX - startX;
+        const newWidth = Math.max(100, startWidth + deltaX);
+        img.width = newWidth;
+      };
+
+      const handleMouseUp = () => {
+        if (!isResizing) return;
+        isResizing = false;
+        document.body.style.cursor = '';
+        resizeHandle.style.opacity = '0.8';
+
+        // Update the node attributes
+        if (typeof getPos === 'function') {
+          const pos = getPos();
+          editor.commands.updateAttributes('image', {
+            width: img.width.toString(),
+            height: img.height.toString(),
+          });
+        }
+      };
+
+      document.addEventListener('mousemove', handleMouseMove);
+      document.addEventListener('mouseup', handleMouseUp);
+
+      return {
+        dom: container,
+        destroy: () => {
+          document.removeEventListener('mousemove', handleMouseMove);
+          document.removeEventListener('mouseup', handleMouseUp);
+        },
+      };
+    };
+  },
+});
+
 interface TiptapEditorProps {
   content: string;
   onChange: (html: string) => void;
@@ -44,9 +160,12 @@ export function TiptapEditor({ content, onChange, onImageUpload, placeholder }: 
           levels: [1, 2, 3],
         },
       }),
-      Image.configure({
+      ResizableImage.configure({
         inline: true,
         allowBase64: true,
+        HTMLAttributes: {
+          class: 'resizable-image',
+        },
       }),
       Link.configure({
         openOnClick: false,
@@ -68,7 +187,7 @@ export function TiptapEditor({ content, onChange, onImageUpload, placeholder }: 
     },
     editorProps: {
       attributes: {
-        class: 'prose prose-sm sm:prose lg:prose-lg xl:prose-xl focus:outline-none min-h-[400px] max-w-none p-4',
+        class: 'prose prose-sm sm:prose lg:prose-lg xl:prose-xl focus:outline-none min-h-[400px] max-w-none p-4 tiptap-editor',
       },
     },
   });
@@ -102,6 +221,21 @@ export function TiptapEditor({ content, onChange, onImageUpload, placeholder }: 
 
   return (
     <div className="border rounded-lg overflow-hidden">
+      <style jsx global>{`
+        .tiptap-editor .resizable-image-container {
+          border: 2px solid transparent;
+          transition: border-color 0.2s;
+          margin: 0.5rem 0;
+        }
+        
+        .tiptap-editor .resizable-image-container:hover {
+          border-color: hsl(var(--primary) / 0.3);
+        }
+        
+        .tiptap-editor .resizable-image-container img {
+          user-select: none;
+        }
+      `}</style>
       {/* Toolbar */}
       <div className="bg-muted p-2 border-b flex flex-wrap gap-1">
         {/* Text Formatting */}
