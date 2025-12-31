@@ -132,7 +132,55 @@ export async function POST(req: Request) {
 
     const sendId = sendRow.id as string;
 
-    // Delivery and sending are performed by the Supabase-triggered Edge Function (send-newsletter).
+    // Prefer triggering the Edge Function directly so we can surface errors in the UI.
+    // (DB trigger via pg_net is kept as a backup, but it can fail silently and leave a run stuck in `sending`.)
+    const { data: settings, error: settingsErr } = await admin
+      .from('app_settings')
+      .select('key, value')
+      .in('key', ['SUPABASE_FUNCTIONS_BASE_URL', 'NEWSLETTER_WEBHOOK_SECRET']);
+
+    if (settingsErr) {
+      console.warn('[Newsletter send] Failed to load app_settings:', settingsErr);
+    }
+
+    const settingsMap = new Map<string, string>(
+      (settings || []).map((r: any) => [String(r.key), String(r.value)])
+    );
+    const baseUrl = settingsMap.get('SUPABASE_FUNCTIONS_BASE_URL') || '';
+    const secret = settingsMap.get('NEWSLETTER_WEBHOOK_SECRET') || '';
+
+    if (baseUrl) {
+      const targetUrl = baseUrl.replace(/\/$/, '') + '/send-newsletter';
+      const fnRes = await fetch(targetUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-newsletter-secret': secret,
+        },
+        body: JSON.stringify({ send_id: sendId }),
+      });
+
+      if (!fnRes.ok) {
+        const errText = await fnRes.text().catch(() => '');
+        console.error('[Newsletter send] Edge Function failed:', fnRes.status, errText);
+
+        await admin
+          .from('newsletter_sends')
+          .update({
+            status: 'failed',
+            completed_at: new Date().toISOString(),
+          })
+          .eq('id', sendId);
+
+        return NextResponse.json(
+          { error: `Edge Function send-newsletter failed (${fnRes.status}): ${errText || 'Unknown error'}` },
+          { status: 500 }
+        );
+      }
+    } else {
+      console.warn('[Newsletter send] SUPABASE_FUNCTIONS_BASE_URL not set; relying on DB trigger only.');
+    }
+
     return NextResponse.json({ sendId, total: recipients.length });
   } catch (e: any) {
     console.error('[Newsletter send] Error:', e);
