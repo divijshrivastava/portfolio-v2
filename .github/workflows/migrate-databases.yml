@@ -21,8 +21,13 @@ jobs:
         id: secrets
         shell: bash
         run: |
-          if [ -z "${{ secrets.SUPABASE_ACCESS_TOKEN }}" ] || [ -z "${{ secrets.SUPABASE_QA_PROJECT_REF }}" ] || [ -z "${{ secrets.SUPABASE_QA_DB_PASSWORD }}" ]; then
-            echo "⚠️ Missing required Supabase QA secrets. Skipping migrations."
+          MISSING=()
+          [ -z "${{ secrets.SUPABASE_ACCESS_TOKEN }}" ] && MISSING+=("SUPABASE_ACCESS_TOKEN")
+          [ -z "${{ secrets.SUPABASE_QA_PROJECT_REF }}" ] && MISSING+=("SUPABASE_QA_PROJECT_REF")
+          [ -z "${{ secrets.SUPABASE_QA_DB_PASSWORD }}" ] && MISSING+=("SUPABASE_QA_DB_PASSWORD")
+
+          if [ ${#MISSING[@]} -gt 0 ]; then
+            echo "⚠️ Missing required Supabase QA secrets: ${MISSING[*]}. Skipping migrations."
             echo "skip=true" >> "$GITHUB_OUTPUT"
           else
             echo "skip=false" >> "$GITHUB_OUTPUT"
@@ -75,6 +80,11 @@ jobs:
           echo "  4. Approve 'Production' environment"
           echo "  5. Migrations will apply to production automatically"
 
+      - name: QA Migrations Skipped
+        if: ${{ steps.secrets.outputs.skip == 'true' }}
+        run: |
+          echo "ℹ️ QA migrations skipped because required secrets are missing."
+
   # Step 2: Apply migrations to Production (requires manual approval via "Review deployments")
   migrate-production:
     name: Apply Migrations to Production
@@ -92,8 +102,13 @@ jobs:
         id: secrets
         shell: bash
         run: |
-          if [ -z "${{ secrets.SUPABASE_ACCESS_TOKEN }}" ] || [ -z "${{ secrets.SUPABASE_PROD_PROJECT_REF }}" ] || [ -z "${{ secrets.SUPABASE_PROD_DB_PASSWORD }}" ]; then
-            echo "⚠️ Missing required Supabase Production secrets. Skipping migrations."
+          MISSING=()
+          [ -z "${{ secrets.SUPABASE_ACCESS_TOKEN }}" ] && MISSING+=("SUPABASE_ACCESS_TOKEN")
+          [ -z "${{ secrets.SUPABASE_PROD_PROJECT_REF }}" ] && MISSING+=("SUPABASE_PROD_PROJECT_REF")
+          [ -z "${{ secrets.SUPABASE_PROD_DB_PASSWORD }}" ] && MISSING+=("SUPABASE_PROD_DB_PASSWORD")
+
+          if [ ${#MISSING[@]} -gt 0 ]; then
+            echo "⚠️ Missing required Supabase Production secrets: ${MISSING[*]}. Skipping migrations."
             echo "skip=true" >> "$GITHUB_OUTPUT"
           else
             echo "skip=false" >> "$GITHUB_OUTPUT"
@@ -134,9 +149,15 @@ jobs:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
 
       - name: Summary
+        if: ${{ steps.secrets.outputs.skip != 'true' }}
         run: |
           echo ""
           echo "✅ Migrations applied to PRODUCTION successfully!"
           echo "🌐 Verify on: https://divij.tech"
           echo ""
           echo "📊 Migration complete!"
+
+      - name: Production Migrations Skipped
+        if: ${{ steps.secrets.outputs.skip == 'true' }}
+        run: |
+          echo "ℹ️ Production migrations skipped because required secrets are missing."
