@@ -51,6 +51,13 @@ jobs:
         run: |
           supabase functions deploy send-newsletter --no-verify-jwt
 
+      - name: Deploy process-scheduled-newsletters (QA)
+        if: ${{ steps.secrets.outputs.skip != 'true' }}
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+        run: |
+          supabase functions deploy process-scheduled-newsletters --no-verify-jwt
+
   deploy-production:
     name: Deploy Edge Functions to Production
     runs-on: ubuntu-latest
@@ -96,5 +103,12 @@ jobs:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
         run: |
           supabase functions deploy send-newsletter --no-verify-jwt
+
+      - name: Deploy process-scheduled-newsletters (Production)
+        if: ${{ steps.secrets.outputs.skip != 'true' }}
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+        run: |
+          supabase functions deploy process-scheduled-newsletters --no-verify-jwt
 
 

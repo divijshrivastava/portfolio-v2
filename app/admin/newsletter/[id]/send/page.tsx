@@ -27,6 +27,11 @@ export default function SendNewsletterPage() {
   const [manualEmails, setManualEmails] = useState('');
   const [recipientCount, setRecipientCount] = useState<number | null>(null);
   const [isSending, setIsSending] = useState(false);
+  
+  // Scheduling
+  const [isScheduled, setIsScheduled] = useState(false);
+  const [scheduledDate, setScheduledDate] = useState('');
+  const [scheduledTime, setScheduledTime] = useState('');
 
   useEffect(() => {
     const load = async () => {
@@ -114,13 +119,33 @@ export default function SendNewsletterPage() {
       audience = { type: 'manual', emails };
     }
 
-    if (!confirm(`Send “${subject}” now?`)) return;
+    let scheduledFor: string | null = null;
+    if (isScheduled) {
+      if (!scheduledDate || !scheduledTime) {
+        alert('Please select both date and time for scheduled sending.');
+        return;
+      }
+      
+      // Combine date and time into ISO timestamp
+      scheduledFor = `${scheduledDate}T${scheduledTime}:00.000Z`;
+      const scheduledDateTime = new Date(scheduledFor);
+      
+      // Validate it's in the future
+      if (scheduledDateTime <= new Date()) {
+        alert('Scheduled time must be in the future.');
+        return;
+      }
+      
+      if (!confirm(`Schedule "${subject}" for ${scheduledDateTime.toLocaleString()}?`)) return;
+    } else {
+      if (!confirm(`Send "${subject}" now?`)) return;
+    }
 
     setIsSending(true);
     const res = await fetch('/api/admin/newsletter/send', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ newsletterId, audience }),
+      body: JSON.stringify({ newsletterId, audience, scheduledFor }),
     });
     const json = await res.json().catch(() => ({}));
     setIsSending(false);
@@ -162,7 +187,7 @@ export default function SendNewsletterPage() {
         </div>
         <Button onClick={handleSend} disabled={isSending}>
           <Send className="h-4 w-4 mr-2" />
-          {isSending ? 'Sending…' : 'Send now'}
+          {isSending ? (isScheduled ? 'Scheduling…' : 'Sending…') : (isScheduled ? 'Schedule' : 'Send now')}
         </Button>
       </div>
 
@@ -217,6 +242,57 @@ export default function SendNewsletterPage() {
               <span className="text-sm text-muted-foreground">{recipientCount} recipients</span>
             )}
           </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Scheduling</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex items-center gap-2">
+            <input
+              type="checkbox"
+              id="schedule-toggle"
+              checked={isScheduled}
+              onChange={(e) => setIsScheduled(e.target.checked)}
+              className="h-4 w-4"
+            />
+            <label htmlFor="schedule-toggle" className="text-sm font-medium cursor-pointer">
+              Schedule for later
+            </label>
+          </div>
+
+          {isScheduled && (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="text-sm font-medium block mb-1">Date</label>
+                <Input
+                  type="date"
+                  value={scheduledDate}
+                  onChange={(e) => setScheduledDate(e.target.value)}
+                  min={new Date().toISOString().split('T')[0]}
+                />
+              </div>
+              <div>
+                <label className="text-sm font-medium block mb-1">Time (UTC)</label>
+                <Input
+                  type="time"
+                  value={scheduledTime}
+                  onChange={(e) => setScheduledTime(e.target.value)}
+                />
+              </div>
+            </div>
+          )}
+
+          {isScheduled && scheduledDate && scheduledTime && (
+            <p className="text-sm text-muted-foreground">
+              Newsletter will be sent at{' '}
+              <span className="font-medium">
+                {new Date(`${scheduledDate}T${scheduledTime}:00.000Z`).toLocaleString()}
+              </span>
+            </p>
+          )}
 
           {status !== 'published' && (
             <p className="text-sm text-destructive">

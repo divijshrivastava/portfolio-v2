@@ -50,12 +50,24 @@ export async function POST(req: Request) {
     const body = await req.json();
     const newsletterId = String(body.newsletterId || '').trim();
     const audience = body.audience as Audience | undefined;
+    const scheduledFor = body.scheduledFor ? String(body.scheduledFor).trim() : null;
 
     if (!newsletterId) {
       return NextResponse.json({ error: 'newsletterId is required' }, { status: 400 });
     }
     if (!audience || !('type' in audience)) {
       return NextResponse.json({ error: 'audience is required' }, { status: 400 });
+    }
+    
+    // Validate scheduledFor if provided
+    if (scheduledFor) {
+      const scheduledDate = new Date(scheduledFor);
+      if (isNaN(scheduledDate.getTime())) {
+        return NextResponse.json({ error: 'Invalid scheduledFor date' }, { status: 400 });
+      }
+      if (scheduledDate <= new Date()) {
+        return NextResponse.json({ error: 'scheduledFor must be in the future' }, { status: 400 });
+      }
     }
 
     const admin = createAdminClient();
@@ -133,16 +145,25 @@ export async function POST(req: Request) {
     }
     recipients = Array.from(byEmail.values());
 
+    // If scheduled, create with 'scheduled' status and don't send yet
+    const isScheduled = !!scheduledFor;
+    const insertData: any = {
+      newsletter_id: newsletterId,
+      audience,
+      status: isScheduled ? 'scheduled' : 'sending',
+      sent_by: auth.userId,
+      total_recipients: recipients.length,
+    };
+    
+    if (isScheduled) {
+      insertData.scheduled_for = scheduledFor;
+    } else {
+      insertData.started_at = new Date().toISOString();
+    }
+
     const { data: sendRow, error: sendErr } = await admin
       .from('newsletter_sends')
-      .insert({
-        newsletter_id: newsletterId,
-        audience,
-        status: 'sending',
-        sent_by: auth.userId,
-        started_at: new Date().toISOString(),
-        total_recipients: recipients.length,
-      })
+      .insert(insertData)
       .select('id')
       .single();
 
@@ -152,8 +173,17 @@ export async function POST(req: Request) {
 
     const sendId = sendRow.id as string;
 
-    // Prefer triggering the Edge Function directly so we can surface errors in the UI.
-    // (DB trigger via pg_net is kept as a backup, but it can fail silently and leave a run stuck in `sending`.)
+    // If scheduled, just return the sendId without triggering the Edge Function
+    if (isScheduled) {
+      return NextResponse.json({
+        sendId,
+        total: recipients.length,
+        scheduled: true,
+        scheduledFor,
+      });
+    }
+
+    // For immediate sends, trigger the Edge Function
     const { data: settings, error: settingsErr } = await admin
       .from('app_settings')
       .select('key, value')
