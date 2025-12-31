@@ -28,13 +28,42 @@ export default function ActivityPage() {
   const loadActivities = async () => {
     const supabase = createClient();
 
-    const { count } = await supabase
+    // Filter to show only major/important activities
+    // Exclude: admin pages, API routes, static assets, health checks, etc.
+    const excludePatterns = [
+      '/admin%',
+      '/api/%',
+      '/_next/%',
+      '/favicon.ico',
+      '/robots.txt',
+      '/sitemap.xml',
+      '/manifest.json',
+      '%.js',
+      '%.css',
+      '%.png',
+      '%.jpg',
+      '%.svg',
+      '%.ico',
+      '%.woff%',
+    ];
+
+    let countQuery = supabase
       .from('user_activity')
       .select('*', { count: 'exact', head: true });
 
-    const { data, error } = await supabase
+    let dataQuery = supabase
       .from('user_activity')
-      .select('*')
+      .select('*');
+
+    // Apply exclusion filters to both queries
+    excludePatterns.forEach(pattern => {
+      countQuery = countQuery.not('page_visited', 'like', pattern);
+      dataQuery = dataQuery.not('page_visited', 'like', pattern);
+    });
+
+    const { count } = await countQuery;
+
+    const { data, error } = await dataQuery
       .order('created_at', { ascending: false })
       .limit(100);
 
@@ -85,7 +114,7 @@ export default function ActivityPage() {
         <div>
           <h1 className="text-4xl font-bold tracking-tight">User Activity</h1>
           <p className="text-muted-foreground mt-2">
-            Total visits: {totalCount} (showing last 100)
+            Major page visits: {totalCount} (showing last 100, filtered to exclude admin/API/assets)
           </p>
         </div>
         <div className="flex gap-2">
