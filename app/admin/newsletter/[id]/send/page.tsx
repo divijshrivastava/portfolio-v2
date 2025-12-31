@@ -27,6 +27,8 @@ export default function SendNewsletterPage() {
   const [manualEmails, setManualEmails] = useState('');
   const [recipientCount, setRecipientCount] = useState<number | null>(null);
   const [recipients, setRecipients] = useState<Array<{ email: string; source?: string; created_at: string }>>([]);
+  const [excludedEmails, setExcludedEmails] = useState<Set<string>>(new Set());
+  const [alreadySentEmails, setAlreadySentEmails] = useState<Set<string>>(new Set());
   const [showAllRecipients, setShowAllRecipients] = useState(false);
   const [isSending, setIsSending] = useState(false);
   
@@ -60,6 +62,15 @@ export default function SendNewsletterPage() {
   }, [newsletterId, router, supabase]);
 
   const computeRecipientCount = async () => {
+    // First, fetch already sent emails for this newsletter
+    const { data: deliveries } = await supabase
+      .from('newsletter_deliveries')
+      .select('email, newsletter_sends!inner(newsletter_id)')
+      .eq('newsletter_sends.newsletter_id', newsletterId);
+    
+    const alreadySent = new Set(deliveries?.map(d => d.email.toLowerCase()) || []);
+    setAlreadySentEmails(alreadySent);
+    
     if (audienceType === 'manual') {
       const parsed = manualEmails
         .split(/[\n,; ]+/)
@@ -68,11 +79,16 @@ export default function SendNewsletterPage() {
       const uniq = Array.from(new Set(parsed));
       setRecipientCount(uniq.length);
       // Create mock recipients for manual emails
-      setRecipients(uniq.map(email => ({ 
+      const recipientList = uniq.map(email => ({ 
         email, 
         source: 'manual', 
         created_at: new Date().toISOString() 
-      })));
+      }));
+      setRecipients(recipientList);
+      
+      // Auto-exclude already sent
+      const autoExclude = new Set(uniq.filter(email => alreadySent.has(email.toLowerCase())));
+      setExcludedEmails(autoExclude);
       return;
     }
 
@@ -80,6 +96,7 @@ export default function SendNewsletterPage() {
       if (!source.trim()) {
         setRecipientCount(0);
         setRecipients([]);
+        setExcludedEmails(new Set());
         return;
       }
       const { data, count } = await supabase
@@ -90,6 +107,10 @@ export default function SendNewsletterPage() {
         .order('created_at', { ascending: false });
       setRecipientCount(count ?? 0);
       setRecipients(data || []);
+      
+      // Auto-exclude already sent
+      const autoExclude = new Set((data || []).filter(r => alreadySent.has(r.email.toLowerCase())).map(r => r.email));
+      setExcludedEmails(autoExclude);
       return;
     }
 
@@ -101,14 +122,46 @@ export default function SendNewsletterPage() {
       .order('created_at', { ascending: false });
     setRecipientCount(count ?? 0);
     setRecipients(data || []);
+    
+    // Auto-exclude already sent
+    const autoExclude = new Set((data || []).filter(r => alreadySent.has(r.email.toLowerCase())).map(r => r.email));
+    setExcludedEmails(autoExclude);
   };
 
   useEffect(() => {
     setRecipientCount(null);
     setRecipients([]);
+    setExcludedEmails(new Set());
+    setAlreadySentEmails(new Set());
     setShowAllRecipients(false);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [audienceType, source, manualEmails]);
+
+  const toggleRecipient = (email: string) => {
+    setExcludedEmails(prev => {
+      const next = new Set(prev);
+      if (next.has(email)) {
+        next.delete(email);
+      } else {
+        next.add(email);
+      }
+      return next;
+    });
+  };
+
+  const includeAll = () => {
+    setExcludedEmails(new Set());
+  };
+
+  const excludeAll = () => {
+    setExcludedEmails(new Set(recipients.map(r => r.email)));
+  };
+
+  const excludeAlreadySent = () => {
+    setExcludedEmails(new Set(recipients.filter(r => alreadySentEmails.has(r.email.toLowerCase())).map(r => r.email)));
+  };
+
+  const includedCount = recipients.length - excludedEmails.size;
 
   const handleSend = async () => {
     if (status !== 'published') {
@@ -166,7 +219,12 @@ export default function SendNewsletterPage() {
     const res = await fetch('/api/admin/newsletter/send', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ newsletterId, audience, scheduledFor }),
+      body: JSON.stringify({ 
+        newsletterId, 
+        audience, 
+        scheduledFor,
+        excludedEmails: Array.from(excludedEmails)
+      }),
     });
     const json = await res.json().catch(() => ({}));
     setIsSending(false);
@@ -268,44 +326,101 @@ export default function SendNewsletterPage() {
 
           {recipients.length > 0 && (
             <div className="mt-4 p-4 border rounded-lg bg-muted/50 space-y-3">
-              <div className="flex items-center justify-between">
-                <h3 className="text-sm font-semibold">Recipients List</h3>
-                {recipients.length > 10 && !showAllRecipients && (
+              <div className="flex items-center justify-between flex-wrap gap-2">
+                <div className="flex items-center gap-2">
+                  <h3 className="text-sm font-semibold">Recipients List</h3>
+                  <span className="text-xs text-muted-foreground px-2 py-1 bg-background rounded border">
+                    {includedCount} will receive
+                  </span>
+                  {excludedEmails.size > 0 && (
+                    <span className="text-xs text-destructive px-2 py-1 bg-destructive/10 rounded border border-destructive/20">
+                      {excludedEmails.size} excluded
+                    </span>
+                  )}
+                </div>
+                <div className="flex items-center gap-2">
                   <Button
                     type="button"
-                    variant="ghost"
+                    variant="outline"
                     size="sm"
-                    onClick={() => setShowAllRecipients(true)}
+                    onClick={includeAll}
                   >
-                    Show All ({recipients.length})
+                    Include All
                   </Button>
-                )}
-                {showAllRecipients && recipients.length > 10 && (
                   <Button
                     type="button"
-                    variant="ghost"
+                    variant="outline"
                     size="sm"
-                    onClick={() => setShowAllRecipients(false)}
+                    onClick={excludeAll}
                   >
-                    Show Less
+                    Exclude All
                   </Button>
-                )}
+                  {alreadySentEmails.size > 0 && (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={excludeAlreadySent}
+                      className="text-xs"
+                    >
+                      Exclude Already Sent ({alreadySentEmails.size})
+                    </Button>
+                  )}
+                  {recipients.length > 10 && !showAllRecipients && (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setShowAllRecipients(true)}
+                    >
+                      Show All
+                    </Button>
+                  )}
+                  {showAllRecipients && recipients.length > 10 && (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setShowAllRecipients(false)}
+                    >
+                      Show Less
+                    </Button>
+                  )}
+                </div>
               </div>
               
               <div className="space-y-1 max-h-96 overflow-y-auto">
-                {(showAllRecipients ? recipients : recipients.slice(0, 10)).map((recipient, idx) => (
-                  <div
-                    key={idx}
-                    className="flex items-center justify-between text-sm py-2 px-3 bg-background rounded border"
-                  >
-                    <span className="font-mono text-xs">{recipient.email}</span>
-                    {recipient.source && recipient.source !== 'manual' && (
-                      <span className="text-xs text-muted-foreground px-2 py-1 bg-muted rounded">
-                        {recipient.source}
-                      </span>
-                    )}
-                  </div>
-                ))}
+                {(showAllRecipients ? recipients : recipients.slice(0, 10)).map((recipient, idx) => {
+                  const isExcluded = excludedEmails.has(recipient.email);
+                  const wasAlreadySent = alreadySentEmails.has(recipient.email.toLowerCase());
+                  
+                  return (
+                    <label
+                      key={idx}
+                      className={`flex items-center gap-3 text-sm py-2 px-3 bg-background rounded border cursor-pointer hover:bg-accent/50 transition-colors ${
+                        isExcluded ? 'opacity-50' : ''
+                      }`}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={!isExcluded}
+                        onChange={() => toggleRecipient(recipient.email)}
+                        className="h-4 w-4"
+                      />
+                      <span className="font-mono text-xs flex-1">{recipient.email}</span>
+                      {wasAlreadySent && (
+                        <span className="text-xs text-orange-600 dark:text-orange-400 px-2 py-1 bg-orange-100 dark:bg-orange-900/20 rounded border border-orange-200 dark:border-orange-800">
+                          already sent
+                        </span>
+                      )}
+                      {recipient.source && recipient.source !== 'manual' && (
+                        <span className="text-xs text-muted-foreground px-2 py-1 bg-muted rounded">
+                          {recipient.source}
+                        </span>
+                      )}
+                    </label>
+                  );
+                })}
               </div>
 
               {!showAllRecipients && recipients.length > 10 && (

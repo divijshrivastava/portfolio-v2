@@ -51,6 +51,9 @@ export async function POST(req: Request) {
     const newsletterId = String(body.newsletterId || '').trim();
     const audience = body.audience as Audience | undefined;
     const scheduledFor = body.scheduledFor ? String(body.scheduledFor).trim() : null;
+    const excludedEmails = Array.isArray(body.excludedEmails) 
+      ? body.excludedEmails.map((e: any) => normalizeEmail(String(e || '')))
+      : [];
 
     if (!newsletterId) {
       return NextResponse.json({ error: 'newsletterId is required' }, { status: 400 });
@@ -145,11 +148,23 @@ export async function POST(req: Request) {
     }
     recipients = Array.from(byEmail.values());
 
+    // Filter out excluded emails
+    const excludedSet = new Set(excludedEmails.filter((e: string) => e));
+    if (excludedSet.size > 0) {
+      recipients = recipients.filter(r => !excludedSet.has(normalizeEmail(r.email)));
+    }
+
     // If scheduled, create with 'scheduled' status and don't send yet
     const isScheduled = !!scheduledFor;
+    
+    // Store audience with excluded emails for reference
+    const audienceWithExclusions = excludedSet.size > 0 
+      ? { ...audience, excludedEmails: Array.from(excludedSet) }
+      : audience;
+    
     const insertData: any = {
       newsletter_id: newsletterId,
-      audience,
+      audience: audienceWithExclusions,
       status: isScheduled ? 'scheduled' : 'sending',
       sent_by: auth.userId,
       total_recipients: recipients.length,
