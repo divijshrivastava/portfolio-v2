@@ -188,18 +188,24 @@ export async function subscribeToNewsletter(input: NewsletterSubscribeInput) {
       if (error.code === '23505') {
         // If they were previously unsubscribed, treat this as a resubscribe.
         // (Requires `unsubscribed_at` column from migrations; safe to attempt.)
-        const { data: updated, error: updateErr } = await supabase
-          .from('newsletter_subscribers')
-          .update({
-            unsubscribed_at: null,
-            ip_address: ipAddress,
-            source,
-          })
-          .eq('email', email)
-          .select('id, unsubscribed_at')
-          .single();
+        let updated: any = null;
+        try {
+          const { data: u, error: updateErr } = await supabase
+            .from('newsletter_subscribers')
+            .update({
+              unsubscribed_at: null,
+              ip_address: ipAddress,
+              source,
+            })
+            .eq('email', email)
+            .select('id')
+            .single();
+          if (!updateErr) updated = u;
+        } catch {
+          // Backward-compat: if columns don't exist yet, ignore and treat as already subscribed.
+        }
 
-        if (!updateErr && updated) {
+        if (updated) {
           try {
             await updateRateLimit(ipAddress);
           } catch (rateLimitError: any) {

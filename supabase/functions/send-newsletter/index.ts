@@ -166,11 +166,18 @@ serve(async (req) => {
 
     let recipients: { subscriber_id: string | null; email: string; unsubscribe_token?: string | null }[] = [];
     if (audience?.type === "all") {
-      const { data, error } = await supabase
+      let { data, error } = await supabase
         .from("newsletter_subscribers")
         .select("id, email, unsubscribe_token")
         .is("unsubscribed_at", null)
         .order("created_at", { ascending: true });
+      // Backward-compat: if DB hasn't been migrated yet, retry without unsubscribed filter/token.
+      if (error && String((error as any).message || "").includes("unsubscribed_at")) {
+        ({ data, error } = await supabase
+          .from("newsletter_subscribers")
+          .select("id, email")
+          .order("created_at", { ascending: true }));
+      }
       if (error) throw error;
       recipients = (data || []).map((r: any) => ({
         subscriber_id: r.id,
@@ -179,12 +186,19 @@ serve(async (req) => {
       }));
     } else if (audience?.type === "source") {
       const source = String((audience as any).source || "").trim();
-      const { data, error } = await supabase
+      let { data, error } = await supabase
         .from("newsletter_subscribers")
         .select("id, email, unsubscribe_token")
         .is("unsubscribed_at", null)
         .eq("source", source)
         .order("created_at", { ascending: true });
+      if (error && String((error as any).message || "").includes("unsubscribed_at")) {
+        ({ data, error } = await supabase
+          .from("newsletter_subscribers")
+          .select("id, email")
+          .eq("source", source)
+          .order("created_at", { ascending: true }));
+      }
       if (error) throw error;
       recipients = (data || []).map((r: any) => ({
         subscriber_id: r.id,

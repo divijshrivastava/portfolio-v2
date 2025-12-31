@@ -76,22 +76,40 @@ export async function POST(req: Request) {
     let recipients: { subscriber_id: string | null; email: string }[] = [];
 
     if (audience.type === 'all') {
-      const { data, error } = await admin
+      let { data, error } = await admin
         .from('newsletter_subscribers')
         .select('id, email')
         .is('unsubscribed_at', null)
         .order('created_at', { ascending: true });
+
+      // Backward-compat: if migrations haven't added `unsubscribed_at` yet, retry without the filter.
+      if (error && String((error as any).message || '').includes('unsubscribed_at')) {
+        ({ data, error } = await admin
+          .from('newsletter_subscribers')
+          .select('id, email')
+          .order('created_at', { ascending: true }));
+      }
+
       if (error) return NextResponse.json({ error: error.message }, { status: 500 });
       recipients = (data || []).map((r) => ({ subscriber_id: r.id, email: r.email }));
     } else if (audience.type === 'source') {
       const source = String((audience as any).source || '').trim();
       if (!source) return NextResponse.json({ error: 'source is required for audience.type=source' }, { status: 400 });
-      const { data, error } = await admin
+      let { data, error } = await admin
         .from('newsletter_subscribers')
         .select('id, email')
         .is('unsubscribed_at', null)
         .eq('source', source)
         .order('created_at', { ascending: true });
+
+      if (error && String((error as any).message || '').includes('unsubscribed_at')) {
+        ({ data, error } = await admin
+          .from('newsletter_subscribers')
+          .select('id, email')
+          .eq('source', source)
+          .order('created_at', { ascending: true }));
+      }
+
       if (error) return NextResponse.json({ error: error.message }, { status: 500 });
       recipients = (data || []).map((r) => ({ subscriber_id: r.id, email: r.email }));
     } else if (audience.type === 'manual') {
