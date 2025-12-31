@@ -126,17 +126,19 @@ export default function SendNewsletterPage() {
         return;
       }
       
-      // Combine date and time into ISO timestamp
-      scheduledFor = `${scheduledDate}T${scheduledTime}:00.000Z`;
-      const scheduledDateTime = new Date(scheduledFor);
+      // Combine date and time in local timezone, then convert to ISO (UTC)
+      const localDateTime = new Date(`${scheduledDate}T${scheduledTime}`);
       
       // Validate it's in the future
-      if (scheduledDateTime <= new Date()) {
+      if (localDateTime <= new Date()) {
         alert('Scheduled time must be in the future.');
         return;
       }
       
-      if (!confirm(`Schedule "${subject}" for ${scheduledDateTime.toLocaleString()}?`)) return;
+      // Convert to ISO string for API (automatically converts to UTC)
+      scheduledFor = localDateTime.toISOString();
+      
+      if (!confirm(`Schedule "${subject}" for ${localDateTime.toLocaleString()}?`)) return;
     } else {
       if (!confirm(`Send "${subject}" now?`)) return;
     }
@@ -275,7 +277,9 @@ export default function SendNewsletterPage() {
                 />
               </div>
               <div>
-                <label className="text-sm font-medium block mb-1">Time (UTC)</label>
+                <label className="text-sm font-medium block mb-1">
+                  Time (your local timezone)
+                </label>
                 <Input
                   type="time"
                   value={scheduledTime}
@@ -289,7 +293,11 @@ export default function SendNewsletterPage() {
             <p className="text-sm text-muted-foreground">
               Newsletter will be sent at{' '}
               <span className="font-medium">
-                {new Date(`${scheduledDate}T${scheduledTime}:00.000Z`).toLocaleString()}
+                {new Date(`${scheduledDate}T${scheduledTime}`).toLocaleString()}
+              </span>
+              {' '}
+              <span className="text-xs">
+                ({Intl.DateTimeFormat().resolvedOptions().timeZone})
               </span>
             </p>
           )}
