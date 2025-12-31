@@ -6,6 +6,12 @@ on:
     paths:
       - 'supabase/migrations/**'
   workflow_dispatch: # Allow manual triggering
+    inputs:
+      applyProduction:
+        description: 'Also apply migrations to Production (requires approval)'
+        type: boolean
+        required: false
+        default: false
 
 jobs:
   # Step 1: Apply migrations to QA automatically
@@ -93,6 +99,8 @@ jobs:
     environment:
       name: Production
       url: https://divij.tech
+    # Only run Production migrations when explicitly requested via workflow_dispatch input.
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.applyProduction == true }}
 
     steps:
       - name: Checkout code
