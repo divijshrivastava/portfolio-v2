@@ -2,7 +2,7 @@ import Link from 'next/link';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Calendar, MailCheck, MailX } from 'lucide-react';
+import { ArrowLeft, Calendar, MailCheck, MailX, Users, UserX } from 'lucide-react';
 
 export default async function NewsletterSendDetailPage({
   params,
@@ -49,6 +49,13 @@ export default async function NewsletterSendDetailPage({
   // Supabase relationship typing can be array vs object depending on schema inference.
   // Normalize to a single newsletter object for display.
   const newsletter = Array.isArray((send as any).newsletters) ? (send as any).newsletters?.[0] : (send as any).newsletters;
+
+  // Parse audience data
+  const audience = send.audience as any;
+  const audienceType = audience?.type || 'unknown';
+  const audienceSource = audience?.source || null;
+  const manualEmails = audience?.emails || [];
+  const excludedEmails = audience?.excludedEmails || [];
 
   return (
     <div className="space-y-6">
@@ -105,19 +112,66 @@ export default async function NewsletterSendDetailPage({
         <CardHeader>
           <CardTitle>Run info</CardTitle>
         </CardHeader>
-        <CardContent className="space-y-2 text-sm text-muted-foreground">
-          <div className="flex items-center gap-2">
-            <Calendar className="h-4 w-4" />
-            Started: {new Date(send.started_at ?? send.created_at).toLocaleString()}
-          </div>
-          {send.completed_at && (
+        <CardContent className="space-y-4">
+          <div className="space-y-2 text-sm text-muted-foreground">
             <div className="flex items-center gap-2">
               <Calendar className="h-4 w-4" />
-              Completed: {new Date(send.completed_at).toLocaleString()}
+              <span>Started: {new Date(send.started_at ?? send.created_at).toLocaleString()}</span>
             </div>
-          )}
-          <div>
-            Audience: <code className="text-xs">{JSON.stringify(send.audience)}</code>
+            {send.completed_at && (
+              <div className="flex items-center gap-2">
+                <Calendar className="h-4 w-4" />
+                <span>Completed: {new Date(send.completed_at).toLocaleString()}</span>
+              </div>
+            )}
+          </div>
+
+          <div className="pt-2 border-t">
+            <h4 className="text-sm font-semibold mb-3 flex items-center gap-2">
+              <Users className="h-4 w-4" />
+              Audience
+            </h4>
+            <div className="space-y-3">
+              <div>
+                <span className="text-xs text-muted-foreground uppercase tracking-wide">Type</span>
+                <p className="text-sm font-medium mt-1 capitalize">
+                  {audienceType === 'all' && 'Everyone subscribed'}
+                  {audienceType === 'source' && `By source: ${audienceSource}`}
+                  {audienceType === 'manual' && 'Manual list'}
+                </p>
+              </div>
+
+              {audienceType === 'manual' && manualEmails.length > 0 && (
+                <div>
+                  <span className="text-xs text-muted-foreground uppercase tracking-wide">
+                    Recipients ({manualEmails.length})
+                  </span>
+                  <div className="mt-2 space-y-1 max-h-32 overflow-y-auto">
+                    {manualEmails.map((email: string, idx: number) => (
+                      <div key={idx} className="text-xs font-mono bg-muted px-2 py-1 rounded">
+                        {email}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {excludedEmails.length > 0 && (
+                <div>
+                  <span className="text-xs text-destructive uppercase tracking-wide flex items-center gap-1">
+                    <UserX className="h-3 w-3" />
+                    Excluded ({excludedEmails.length})
+                  </span>
+                  <div className="mt-2 space-y-1 max-h-32 overflow-y-auto">
+                    {excludedEmails.map((email: string, idx: number) => (
+                      <div key={idx} className="text-xs font-mono bg-destructive/10 text-destructive px-2 py-1 rounded border border-destructive/20">
+                        {email}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         </CardContent>
       </Card>
