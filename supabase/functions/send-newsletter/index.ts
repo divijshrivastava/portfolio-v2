@@ -191,10 +191,15 @@ serve(async (req) => {
         status: "pending",
       }));
 
-      // Supabase JS doesn't expose "ON CONFLICT DO NOTHING" directly;
-      // but insert will fail on conflicts. We'll batch small and ignore conflicts by retrying.
-      // Best-effort: if it fails, we continue and just process existing pending rows.
-      await supabase.from("newsletter_deliveries").insert(seed).catch(() => {});
+      // Use upsert with ignoreDuplicates so reruns don't error on (send_id, email) uniqueness.
+      // Note: Supabase query builders are Promise-like but don't always implement `.catch()`.
+      const { error: seedErr } = await supabase
+        .from("newsletter_deliveries")
+        .upsert(seed, { onConflict: "send_id,email", ignoreDuplicates: true });
+      if (seedErr) {
+        // Best-effort: continue anyway and just process existing pending rows.
+        console.warn("Failed to seed deliveries (continuing):", seedErr);
+      }
     }
 
     // Fetch pending deliveries
