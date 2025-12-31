@@ -58,6 +58,16 @@ jobs:
         run: |
           supabase functions deploy process-scheduled-newsletters --no-verify-jwt
 
+      - name: Schedule process-scheduled-newsletters cron (QA)
+        if: ${{ steps.secrets.outputs.skip != 'true' }}
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+        run: |
+          echo "Setting up cron schedule for process-scheduled-newsletters (every minute)"
+          supabase functions schedule process-scheduled-newsletters \
+            --cron "* * * * *" \
+            --project-ref ${{ secrets.SUPABASE_QA_PROJECT_REF }}
+
   deploy-production:
     name: Deploy Edge Functions to Production
     runs-on: ubuntu-latest
@@ -110,5 +120,15 @@ jobs:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
         run: |
           supabase functions deploy process-scheduled-newsletters --no-verify-jwt
+
+      - name: Schedule process-scheduled-newsletters cron (Production)
+        if: ${{ steps.secrets.outputs.skip != 'true' }}
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+        run: |
+          echo "Setting up cron schedule for process-scheduled-newsletters (every minute)"
+          supabase functions schedule process-scheduled-newsletters \
+            --cron "* * * * *" \
+            --project-ref ${{ secrets.SUPABASE_PROD_PROJECT_REF }}
 
 
