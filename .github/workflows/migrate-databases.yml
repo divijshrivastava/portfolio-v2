@@ -99,8 +99,7 @@ jobs:
     environment:
       name: Production
       url: https://divij.tech
-    # Only run Production migrations when explicitly requested via workflow_dispatch input.
-    if: ${{ github.event_name == 'workflow_dispatch' && inputs.applyProduction == true }}
+    # Always include production migrations, but approval is required via the Production environment protection rule
 
     steps:
       - name: Checkout code
