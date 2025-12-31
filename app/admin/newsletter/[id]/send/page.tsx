@@ -26,6 +26,8 @@ export default function SendNewsletterPage() {
   const [source, setSource] = useState('');
   const [manualEmails, setManualEmails] = useState('');
   const [recipientCount, setRecipientCount] = useState<number | null>(null);
+  const [recipients, setRecipients] = useState<Array<{ email: string; source?: string; created_at: string }>>([]);
+  const [showAllRecipients, setShowAllRecipients] = useState(false);
   const [isSending, setIsSending] = useState(false);
   
   // Scheduling
@@ -65,30 +67,46 @@ export default function SendNewsletterPage() {
         .filter(Boolean);
       const uniq = Array.from(new Set(parsed));
       setRecipientCount(uniq.length);
+      // Create mock recipients for manual emails
+      setRecipients(uniq.map(email => ({ 
+        email, 
+        source: 'manual', 
+        created_at: new Date().toISOString() 
+      })));
       return;
     }
 
     if (audienceType === 'source') {
       if (!source.trim()) {
         setRecipientCount(0);
+        setRecipients([]);
         return;
       }
-      const { count } = await supabase
+      const { data, count } = await supabase
         .from('newsletter_subscribers')
-        .select('*', { count: 'exact', head: true })
-        .eq('source', source.trim());
+        .select('email, source, created_at')
+        .eq('source', source.trim())
+        .is('unsubscribed_at', null)
+        .order('created_at', { ascending: false });
       setRecipientCount(count ?? 0);
+      setRecipients(data || []);
       return;
     }
 
-    const { count } = await supabase
+    // All subscribers
+    const { data, count } = await supabase
       .from('newsletter_subscribers')
-      .select('*', { count: 'exact', head: true });
+      .select('email, source, created_at')
+      .is('unsubscribed_at', null)
+      .order('created_at', { ascending: false });
     setRecipientCount(count ?? 0);
+    setRecipients(data || []);
   };
 
   useEffect(() => {
     setRecipientCount(null);
+    setRecipients([]);
+    setShowAllRecipients(false);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [audienceType, source, manualEmails]);
 
@@ -239,12 +257,64 @@ export default function SendNewsletterPage() {
 
           <div className="flex items-center gap-2">
             <Button type="button" variant="outline" onClick={computeRecipientCount}>
-              Calculate recipient count
+              Preview Recipients
             </Button>
             {recipientCount !== null && (
-              <span className="text-sm text-muted-foreground">{recipientCount} recipients</span>
+              <span className="text-sm text-muted-foreground font-medium">
+                {recipientCount} {recipientCount === 1 ? 'recipient' : 'recipients'}
+              </span>
             )}
           </div>
+
+          {recipients.length > 0 && (
+            <div className="mt-4 p-4 border rounded-lg bg-muted/50 space-y-3">
+              <div className="flex items-center justify-between">
+                <h3 className="text-sm font-semibold">Recipients List</h3>
+                {recipients.length > 10 && !showAllRecipients && (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setShowAllRecipients(true)}
+                  >
+                    Show All ({recipients.length})
+                  </Button>
+                )}
+                {showAllRecipients && recipients.length > 10 && (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setShowAllRecipients(false)}
+                  >
+                    Show Less
+                  </Button>
+                )}
+              </div>
+              
+              <div className="space-y-1 max-h-96 overflow-y-auto">
+                {(showAllRecipients ? recipients : recipients.slice(0, 10)).map((recipient, idx) => (
+                  <div
+                    key={idx}
+                    className="flex items-center justify-between text-sm py-2 px-3 bg-background rounded border"
+                  >
+                    <span className="font-mono text-xs">{recipient.email}</span>
+                    {recipient.source && recipient.source !== 'manual' && (
+                      <span className="text-xs text-muted-foreground px-2 py-1 bg-muted rounded">
+                        {recipient.source}
+                      </span>
+                    )}
+                  </div>
+                ))}
+              </div>
+
+              {!showAllRecipients && recipients.length > 10 && (
+                <p className="text-xs text-muted-foreground text-center">
+                  Showing 10 of {recipients.length} recipients
+                </p>
+              )}
+            </div>
+          )}
         </CardContent>
       </Card>
 
