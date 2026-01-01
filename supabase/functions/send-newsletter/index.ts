@@ -264,53 +264,64 @@ serve(async (req) => {
 
     let sentCount = 0;
     let failedCount = 0;
-    const concurrency = 5;
-    let idx = 0;
+    
+    // Rate limiting: 2 requests per second = 500ms delay between requests
+    // Add buffer for safety: 600ms delay
+    const DELAY_MS = 600;
 
-    async function worker() {
-      while (idx < (pending?.length || 0)) {
-        const i = idx++;
-        const d = (pending as any[])[i];
-        try {
-          const emailNorm = normalizeEmail(String(d.email || ""));
-          const token = tokenByEmail.get(emailNorm);
-          const unsubscribeUrl = token ? `${siteUrl}/unsubscribe?token=${encodeURIComponent(token)}` : `${siteUrl}/newsletter`;
+    // Helper to sleep
+    const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
-          const html = renderNewsletterEmail({
-            subject: newsletter.subject,
-            previewText: newsletter.preview_text,
-            bodyHtml: newsletter.body_html,
-            attachments: newsletter.attachments || [],
-            unsubscribeUrl,
-          });
+    // Process emails sequentially with rate limiting
+    for (let i = 0; i < (pending?.length || 0); i++) {
+      const d = (pending as any[])[i];
+      try {
+        const emailNorm = normalizeEmail(String(d.email || ""));
+        const token = tokenByEmail.get(emailNorm);
+        const unsubscribeUrl = token ? `${siteUrl}/unsubscribe?token=${encodeURIComponent(token)}` : `${siteUrl}/newsletter`;
 
-          const resp = await sendResendEmail({ to: d.email, subject: newsletter.subject, html });
-          sentCount++;
-          await supabase
-            .from("newsletter_deliveries")
-            .update({
-              status: "sent",
-              provider: "resend",
-              provider_message_id: resp.id ?? null,
-              sent_at: new Date().toISOString(),
-              error: null,
-            })
-            .eq("id", d.id);
-        } catch (e: any) {
-          failedCount++;
-          await supabase
-            .from("newsletter_deliveries")
-            .update({
-              status: "failed",
-              provider: "resend",
-              error: String(e?.message || e),
-            })
-            .eq("id", d.id);
+        const html = renderNewsletterEmail({
+          subject: newsletter.subject,
+          previewText: newsletter.preview_text,
+          bodyHtml: newsletter.body_html,
+          attachments: newsletter.attachments || [],
+          unsubscribeUrl,
+        });
+
+        const resp = await sendResendEmail({ to: d.email, subject: newsletter.subject, html });
+        sentCount++;
+        await supabase
+          .from("newsletter_deliveries")
+          .update({
+            status: "sent",
+            provider: "resend",
+            provider_message_id: resp.id ?? null,
+            sent_at: new Date().toISOString(),
+            error: null,
+          })
+          .eq("id", d.id);
+
+        // Rate limit: wait before next email (except for last one)
+        if (i < (pending?.length || 0) - 1) {
+          await sleep(DELAY_MS);
+        }
+      } catch (e: any) {
+        failedCount++;
+        await supabase
+          .from("newsletter_deliveries")
+          .update({
+            status: "failed",
+            provider: "resend",
+            error: String(e?.message || e),
+          })
+          .eq("id", d.id);
+
+        // Also wait after failures to avoid hitting rate limits on retries
+        if (i < (pending?.length || 0) - 1) {
+          await sleep(DELAY_MS);
         }
       }
     }
-
-    await Promise.all(Array.from({ length: Math.min(concurrency, pending?.length || 0) }, () => worker()));
 
     // Update send summary based on current DB state
     const [{ count: total }, { count: sent }, { count: failed }] = await Promise.all([
