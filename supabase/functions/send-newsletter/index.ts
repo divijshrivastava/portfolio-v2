@@ -226,6 +226,16 @@ serve(async (req) => {
     }
     recipients = Array.from(byEmail.values());
 
+    // Filter out excluded emails from the audience
+    const excludedEmails = Array.isArray((audience as any).excludedEmails) 
+      ? (audience as any).excludedEmails.map((e: any) => normalizeEmail(String(e || ""))) 
+      : [];
+    
+    if (excludedEmails.length > 0) {
+      const excludedSet = new Set(excludedEmails);
+      recipients = recipients.filter(r => !excludedSet.has(normalizeEmail(r.email)));
+    }
+
     const siteUrl = getSiteUrl().replace(/\/$/, "");
     const tokenByEmail = new Map<string, string>();
     for (const r of recipients) {
