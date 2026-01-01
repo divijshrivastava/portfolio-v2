@@ -62,11 +62,12 @@ export default function SendNewsletterPage() {
   }, [newsletterId, router, supabase]);
 
   const computeRecipientCount = async () => {
-    // First, fetch already sent emails for this newsletter
+    // First, fetch SUCCESSFULLY sent emails for this newsletter (status = 'sent')
     const { data: deliveries } = await supabase
       .from('newsletter_deliveries')
       .select('email, newsletter_sends!inner(newsletter_id)')
-      .eq('newsletter_sends.newsletter_id', newsletterId);
+      .eq('newsletter_sends.newsletter_id', newsletterId)
+      .eq('status', 'sent'); // Only count successful deliveries
     
     const alreadySent = new Set(deliveries?.map(d => d.email.toLowerCase()) || []);
     setAlreadySentEmails(alreadySent);
