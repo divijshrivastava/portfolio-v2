@@ -19,7 +19,7 @@ export default async function BlogPage() {
   return (
     <>
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <div className="max-w-4xl mx-auto">
+        <div className="max-w-7xl mx-auto">
           <h1 className="text-4xl sm:text-5xl font-bold mb-4 text-primary">Blog</h1>
           <p className="text-xl text-muted-foreground mb-12">
             I write about real engineering problems, architectural trade-offs, and lessons learned from building production
@@ -90,7 +90,7 @@ export default async function BlogPage() {
         source="blog_index"
         title="Subscribe for new posts"
         description="Get notified when a new deep-dive drops."
-        className="my-12 mx-auto max-w-4xl w-[calc(100%-2rem)] sm:w-[calc(100%-3rem)] lg:w-[calc(100%-4rem)]"
+        className="my-12 mx-auto max-w-7xl w-[calc(100%-2rem)] sm:w-[calc(100%-3rem)] lg:w-[calc(100%-4rem)]"
       />
     </>
   );

@@ -87,13 +87,13 @@ export default async function Home() {
 
       {/* What I Do Section */}
       <section className="container mx-auto px-4 sm:px-6 lg:px-8 py-16">
-        <div className="max-w-4xl mx-auto mb-12 text-center">
+        <div className="max-w-7xl mx-auto mb-12 text-center">
           <h2 className="text-3xl sm:text-4xl font-bold mb-4 text-primary">What I Do</h2>
           <p className="text-lg text-muted-foreground">
             Full-stack engineer with expertise in fintech systems, from real-time trading platforms to ESG analytics, built for enterprise scale.
           </p>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl mx-auto">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-5 gap-6 max-w-[1800px] mx-auto">
           <Card className="hover:shadow-lg hover:border-primary/30 transition-all duration-300 group">
             <CardHeader>
               <Layers className="h-10 w-10 mb-4 text-primary group-hover:text-secondary transition-colors duration-300" />
@@ -148,7 +148,7 @@ export default async function Home() {
 
       {/* Featured Projects Section */}
       <section className="container mx-auto px-4 sm:px-6 lg:px-8 py-16 bg-muted/30">
-        <div className="max-w-6xl mx-auto">
+        <div className="max-w-[1800px] mx-auto">
           <div className="mb-12 text-center">
             <h2 className="text-3xl sm:text-4xl font-bold mb-4 text-primary">Featured Projects</h2>
             <p className="text-lg text-muted-foreground">
@@ -157,7 +157,7 @@ export default async function Home() {
           </div>
           {featuredProjects && featuredProjects.length > 0 ? (
             <>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 2xl:grid-cols-3 gap-6">
                 {featuredProjects.map((project) => (
                   <Card key={project.id} className="hover:shadow-lg hover:border-primary/30 transition-all duration-300">
                     <CardHeader>
@@ -210,7 +210,7 @@ export default async function Home() {
             <h2 className="text-3xl sm:text-4xl font-bold mb-4">
               Let's Work Together
             </h2>
-            <p className="text-lg text-muted-foreground mb-6 max-w-2xl mx-auto">
+            <p className="text-lg text-muted-foreground mb-6 max-w-4xl mx-auto">
               Open to senior engineering roles in fintech, system architecture consulting, or collaborating on challenging technical problems. Let's connect.
             </p>
             <Button asChild size="lg">
