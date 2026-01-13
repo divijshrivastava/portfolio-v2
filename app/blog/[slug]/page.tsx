@@ -4,6 +4,8 @@ import { createClient } from '@/lib/supabase/server';
 import { Calendar, Clock, ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
+import { TrackPageView } from '@/components/track-page-view';
+import { NewsletterCTA } from '@/components/newsletter/newsletter-cta';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -14,41 +16,77 @@ export async function generateStaticParams() {
   return [];
 }
 
-// Temporarily disabled to debug Vercel 500 error
-// export async function generateMetadata({
-//   params
-// }: {
-//   params: Promise<{ slug: string }>
-// }) {
-//   try {
-//     const { slug } = await params;
-//     const supabase = await createClient();
+export async function generateMetadata({
+  params
+}: {
+  params: Promise<{ slug: string }>
+}) {
+  try {
+    const { slug } = await params;
+    const supabase = await createClient();
 
-//     const { data: blog, error } = await supabase
-//       .from('blogs')
-//       .select('title, summary')
-//       .eq('slug', slug)
-//       .eq('status', 'published')
-//       .single();
+    const { data: blog, error } = await supabase
+      .from('blogs')
+      .select('title, summary, cover_image_url, og_image_url')
+      .eq('slug', slug)
+      .eq('status', 'published')
+      .single();
 
-//     if (error || !blog) {
-//       console.error('Metadata fetch error:', error);
-//       return {
-//         title: 'Blog Not Found',
-//       };
-//     }
+    if (error || !blog) {
+      console.error('Metadata fetch error:', error);
+      return {
+        title: 'Blog Not Found',
+      };
+    }
 
-//     return {
-//       title: blog.title,
-//       description: blog.summary || blog.title,
-//     };
-//   } catch (error) {
-//     console.error('Metadata generation error:', error);
-//     return {
-//       title: 'Blog',
-//     };
-//   }
-// }
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://divij.tech';
+
+    // Prefer optimized OG image if available, otherwise use cover image
+    let ogImage = `${baseUrl}/og-image.png`; // Default fallback (1200x630)
+    
+    if (blog.og_image_url && blog.og_image_url.trim()) {
+      // Use optimized OG image if available
+      ogImage = blog.og_image_url.startsWith('http') 
+        ? blog.og_image_url 
+        : `${baseUrl}${blog.og_image_url.startsWith('/') ? blog.og_image_url : `/${blog.og_image_url}`}`;
+    } else if (blog.cover_image_url) {
+      // Fallback to cover image
+      ogImage = blog.cover_image_url.startsWith('http') 
+        ? blog.cover_image_url 
+        : `${baseUrl}${blog.cover_image_url.startsWith('/') ? blog.cover_image_url : `/${blog.cover_image_url}`}`;
+    }
+
+    return {
+      title: blog.title,
+      description: blog.summary || blog.title,
+      openGraph: {
+        title: blog.title,
+        description: blog.summary || blog.title,
+        type: 'article',
+        url: `${baseUrl}/blog/${slug}`,
+        images: [
+          {
+            url: ogImage,
+            width: 1200,
+            height: 630,
+            alt: blog.title,
+          },
+        ],
+      },
+      twitter: {
+        card: 'summary_large_image',
+        title: blog.title,
+        description: blog.summary || blog.title,
+        images: [ogImage],
+      },
+    };
+  } catch (error) {
+    console.error('Metadata generation error:', error);
+    return {
+      title: 'Blog',
+    };
+  }
+}
 
 export default async function BlogPost({
   params
@@ -71,18 +109,9 @@ export default async function BlogPost({
       notFound();
     }
 
-    // Skip view count for now to isolate issue
-    // try {
-    //   await supabase
-    //     .from('blogs')
-    //     .update({ views: (blog.views || 0) + 1 })
-    //     .eq('id', blog.id);
-    // } catch (viewError) {
-    //   console.error('View count update failed:', viewError);
-    // }
-
     return (
       <div className="min-h-screen">
+        <TrackPageView type="blog" id={blog.id} />
         {/* Hero Section */}
         <div className="bg-gradient-to-br from-primary/10 via-background to-secondary/10 py-16 sm:py-24">
           <div className="container mx-auto px-4 sm:px-6 lg:px-8">
@@ -163,6 +192,15 @@ export default async function BlogPost({
               className="prose prose-lg dark:prose-invert max-w-none"
               dangerouslySetInnerHTML={{ __html: blog.content }}
             />
+
+            {/* Newsletter CTA (End of Post) */}
+            <div className="mt-12">
+              <NewsletterCTA
+                source="blog_post_end"
+                title="Want more like this?"
+                description="Subscribe and I’ll send the next post straight to your inbox."
+              />
+            </div>
           </div>
         </article>
       </div>

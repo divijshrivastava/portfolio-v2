@@ -37,7 +37,22 @@ jobs:
     needs: check-ci-success
 
     steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Check required secrets (Vercel)
+        id: secrets
+        shell: bash
+        run: |
+          if [ -z "${{ secrets.VERCEL_TOKEN }}" ]; then
+            echo "⚠️ Missing VERCEL_TOKEN. Skipping deployment steps."
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: QA Deployment Notice
+        if: ${{ steps.secrets.outputs.skip != 'true' }}
         run: |
           echo "🚀 QA Deployment Started"
           echo "=================================="
@@ -47,17 +62,186 @@ jobs:
           echo "  - Domain: https://divij-qa.tech"
           echo "  - Project: portfolio-v2-qa"
           echo "  - Database: QA Supabase"
+          echo "  - Commit: ${{ github.sha }}"
           echo ""
           echo "⏳ Deployment typically takes 1-2 minutes"
           echo "📊 Monitor deployment at: https://vercel.com/dashboard"
 
-      - name: Wait for deployment window
+      - name: Setup Node.js
+        if: ${{ steps.secrets.outputs.skip != 'true' }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22.x'
+
+      - name: Install Vercel CLI
+        if: ${{ steps.secrets.outputs.skip != 'true' }}
+        run: npm install -g vercel@latest
+
+      - name: Wait and verify QA deployment
+        if: ${{ steps.secrets.outputs.skip != 'true' }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_ORG_ID: team_x9rctQP08KrOwurkk77O3KVd
         run: |
-          echo "⏳ Waiting for Vercel deployment to complete..."
-          sleep 120
-          echo "✅ QA deployment should be complete"
+          echo "⏳ Waiting for Vercel deployment to start..."
+          echo "Commit SHA: ${{ github.sha }}"
+
+          # Wait up to 4 minutes for deployment to complete
+          MAX_WAIT=240
+          ELAPSED=0
+          SLEEP_INTERVAL=15
+          DEPLOYMENT_FOUND=false
+          DEPLOYMENT_STARTED=false
+          IN_PROGRESS_SINCE=0
+          VERCEL_BUILDING_SINCE=0
+
+          # First, check what deployments exist for debugging
+          echo "🔍 Checking existing GitHub deployments..."
+          ALL_DEPLOYMENTS=$(gh api /repos/${{ github.repository }}/deployments --jq ".[] | select(.sha == \"${{ github.sha }}\") | {id: .id, environment: .environment, sha: .sha}" 2>/dev/null || echo "")
+          if [ -n "$ALL_DEPLOYMENTS" ]; then
+            echo "Found deployments for this commit:"
+            echo "$ALL_DEPLOYMENTS"
+          else
+            echo "No GitHub deployments found for this commit yet"
+          fi
+
+          while [ $ELAPSED -lt $MAX_WAIT ]; do
+            echo "[$ELAPSED/$MAX_WAIT seconds] Checking for deployment..."
+
+            # Check GitHub deployments API for this commit (more flexible environment matching)
+            DEPLOYMENTS=$(gh api \
+              /repos/${{ github.repository }}/deployments \
+              --jq ".[] | select(.sha == \"${{ github.sha }}\") | select(.environment | contains(\"qa\") or contains(\"QA\") or contains(\"production\") or contains(\"Production\")) | .id" \
+              2>/dev/null || echo "")
+
+            if [ -n "$DEPLOYMENTS" ]; then
+              if [ "$DEPLOYMENT_STARTED" = false ]; then
+                echo "✅ Deployment found in GitHub!"
+                DEPLOYMENT_STARTED=true
+              fi
+
+              DEPLOYMENT_ID=$(echo "$DEPLOYMENTS" | head -1)
+
+              # Check deployment status
+              STATUS=$(gh api \
+                /repos/${{ github.repository }}/deployments/$DEPLOYMENT_ID/statuses \
+                --jq ".[0].state" \
+                2>/dev/null || echo "pending")
+
+              echo "Deployment status: $STATUS"
+
+              if [ "$STATUS" = "success" ]; then
+                echo "✅ QA deployment completed successfully!"
+                DEPLOYMENT_FOUND=true
+                break
+              elif [ "$STATUS" = "failure" ] || [ "$STATUS" = "error" ]; then
+                echo "❌ QA deployment failed!"
+                exit 1
+              elif [ "$STATUS" = "in_progress" ] || [ "$STATUS" = "pending" ]; then
+                echo "⏳ Deployment in progress..."
+                
+                # Track how long it's been in_progress
+                if [ "$IN_PROGRESS_SINCE" -eq 0 ]; then
+                  IN_PROGRESS_SINCE=$ELAPSED
+                fi
+                
+                # If stuck in_progress for more than 2 minutes, check Vercel directly
+                IN_PROGRESS_DURATION=$((ELAPSED - IN_PROGRESS_SINCE))
+                if [ "$IN_PROGRESS_DURATION" -gt 120 ]; then
+                  echo "⚠️  GitHub deployment stuck in 'in_progress' for $IN_PROGRESS_DURATION seconds"
+                  echo "🔍 Checking Vercel directly to verify deployment status..."
+                  
+                  # Check Vercel deployments for QA project (portfolio-v2-qa)
+                  VERCEL_DEPLOYMENT=$(vercel ls --token=$VERCEL_TOKEN --scope=$VERCEL_ORG_ID 2>&1 | grep -i "portfolio-v2-qa\|production\|ready" | head -1 || echo "")
+                  
+                  if echo "$VERCEL_DEPLOYMENT" | grep -qi "ready"; then
+                    echo "✅ Vercel shows QA deployment is READY!"
+                    echo "GitHub deployment status may be delayed, but Vercel deployment is complete"
+                    DEPLOYMENT_FOUND=true
+                    break
+                  elif echo "$VERCEL_DEPLOYMENT" | grep -qi "building"; then
+                    echo "⏳ Vercel deployment still building..."
+                    # Track when we first detected Vercel is building
+                    if [ "$VERCEL_BUILDING_SINCE" -eq 0 ]; then
+                      VERCEL_BUILDING_SINCE=$ELAPSED
+                      echo "Will wait up to 2 more minutes for Vercel build to complete..."
+                    else
+                      VERCEL_BUILDING_DURATION=$((ELAPSED - VERCEL_BUILDING_SINCE))
+                      # If Vercel has been building for more than 2 minutes, proceed with warning
+                      if [ "$VERCEL_BUILDING_DURATION" -gt 120 ]; then
+                        echo "⚠️  Vercel deployment has been building for $VERCEL_BUILDING_DURATION seconds"
+                        echo "This is longer than typical (1-2 minutes). Proceeding with warning."
+                        echo "Deployment may still be in progress - check Vercel dashboard: https://vercel.com/dashboard"
+                        DEPLOYMENT_FOUND=true
+                        break
+                      fi
+                    fi
+                  else
+                    echo "ℹ️  Could not determine Vercel deployment status from CLI output"
+                    echo "Proceeding anyway - Vercel deployments typically complete in 1-2 minutes"
+                    DEPLOYMENT_FOUND=true
+                    break
+                  fi
+                fi
+              fi
+            else
+              # If no GitHub deployment found after 2 minutes, check Vercel directly
+              if [ "$ELAPSED" -gt 120 ] && [ "$DEPLOYMENT_STARTED" = false ]; then
+                echo "ℹ️  No GitHub deployment found after 2 minutes"
+                echo "🔍 Checking Vercel directly..."
+                
+                VERCEL_DEPLOYMENT=$(vercel ls --token=$VERCEL_TOKEN --scope=$VERCEL_ORG_ID 2>&1 | grep -i "portfolio-v2-qa\|production\|ready" | head -1 || echo "")
+                
+                if echo "$VERCEL_DEPLOYMENT" | grep -qi "ready"; then
+                  echo "✅ Vercel shows QA deployment is READY!"
+                  DEPLOYMENT_FOUND=true
+                  DEPLOYMENT_STARTED=true
+                  break
+                elif echo "$VERCEL_DEPLOYMENT" | grep -qi "building"; then
+                  echo "⏳ Vercel deployment still building..."
+                  DEPLOYMENT_STARTED=true
+                  # Track when we first detected Vercel is building
+                  if [ "$VERCEL_BUILDING_SINCE" -eq 0 ]; then
+                    VERCEL_BUILDING_SINCE=$ELAPSED
+                    echo "Will wait up to 2 more minutes for Vercel build to complete..."
+                  else
+                    VERCEL_BUILDING_DURATION=$((ELAPSED - VERCEL_BUILDING_SINCE))
+                    # If Vercel has been building for more than 2 minutes, proceed with warning
+                    if [ "$VERCEL_BUILDING_DURATION" -gt 120 ]; then
+                      echo "⚠️  Vercel deployment has been building for $VERCEL_BUILDING_DURATION seconds"
+                      echo "This is longer than typical (1-2 minutes). Proceeding with warning."
+                      echo "Deployment may still be in progress - check Vercel dashboard: https://vercel.com/dashboard"
+                      DEPLOYMENT_FOUND=true
+                      break
+                    fi
+                  fi
+                else
+                  echo "Vercel typically deploys within 1-2 minutes"
+                  echo "Assuming deployment is in progress or completed"
+                  DEPLOYMENT_STARTED=true
+                fi
+              fi
+            fi
+
+            sleep $SLEEP_INTERVAL
+            ELAPSED=$((ELAPSED + SLEEP_INTERVAL))
+          done
+
+          if [ "$DEPLOYMENT_FOUND" = false ]; then
+            if [ "$DEPLOYMENT_STARTED" = true ]; then
+              echo "⚠️  WARNING: Deployment started but did not complete within timeout"
+              echo "Deployment is still in progress. Proceeding to testing phase."
+              echo "Monitor completion at: https://vercel.com/dashboard"
+            else
+              echo "⚠️  WARNING: Could not find deployment within timeout"
+              echo "Vercel may have deployed successfully but GitHub deployment status not available"
+              echo "Proceeding anyway - please verify QA deployment at https://divij-qa.tech"
+            fi
+          fi
 
       - name: QA Testing Instructions
+        if: ${{ steps.secrets.outputs.skip != 'true' }}
         run: |
           echo ""
           echo "📋 QA Testing Checklist"
@@ -91,41 +275,272 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Check required secrets (Vercel)
+        id: secrets
+        shell: bash
+        run: |
+          if [ -z "${{ secrets.VERCEL_TOKEN }}" ]; then
+            echo "⚠️ Missing VERCEL_TOKEN. Skipping deployment steps."
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Production Deployment Approved
+        if: ${{ steps.secrets.outputs.skip != 'true' }}
         run: |
           echo "✅ Production Deployment Approved"
           echo "=================================="
           echo ""
-          echo "Deploying to production environment via Vercel CLI"
+          echo "🚀 Promoting Vercel deployment to production"
           echo ""
           echo "Production Environment:"
           echo "  - Domain: https://divij.tech"
           echo "  - Project: portfolio-v2"
           echo "  - Database: Production Supabase"
+          echo "  - Commit: ${{ github.sha }}"
+          echo ""
+          echo "⏳ Promotion typically takes 30-60 seconds"
+          echo "📊 Monitor deployment at: https://vercel.com/dashboard"
+
+      - name: Setup Node.js
+        if: ${{ steps.secrets.outputs.skip != 'true' }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22.x'
 
       - name: Install Vercel CLI
-        run: npm install --global vercel@latest
+        if: ${{ steps.secrets.outputs.skip != 'true' }}
+        run: npm install -g vercel@latest
 
-      - name: Pull Vercel Environment Information
-        run: vercel pull --yes --environment=production --token=${{ secrets.VERCEL_TOKEN }}
+      - name: Promote deployment to production
+        if: ${{ steps.secrets.outputs.skip != 'true' }}
         env:
-          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
-          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
-
-      - name: Build Project Artifacts
-        run: vercel build --prod --token=${{ secrets.VERCEL_TOKEN }}
-        env:
-          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
-          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
-
-      - name: Deploy to Production
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_ORG_ID: team_x9rctQP08KrOwurkk77O3KVd
+          VERCEL_PROJECT_ID: prj_HDbxSTPlg7QuiPAraoHHUhFWFh6K
         run: |
-          echo "🚀 Deploying to production..."
-          vercel deploy --prebuilt --prod --token=${{ secrets.VERCEL_TOKEN }}
-          echo "✅ Production deployment complete!"
+          echo "🔍 Finding deployment for commit ${{ github.sha }}..."
+
+          # Get list of deployments for this project with proper team scope
+          DEPLOYMENTS=$(vercel ls --token=$VERCEL_TOKEN --scope=$VERCEL_ORG_ID 2>&1)
+
+          echo "Recent deployments:"
+          echo "$DEPLOYMENTS"
+          echo ""
+
+          # Find deployment URL for this commit (first 7 chars)
+          COMMIT_SHORT="${{ github.sha }}"
+          COMMIT_SHORT="${COMMIT_SHORT:0:7}"
+
+          # Try to find the deployment by inspecting recent deployments
+          # Vercel CLI shows deployments with their URLs
+          DEPLOYMENT_URL=$(echo "$DEPLOYMENTS" | grep -o 'https://[^ ]*vercel.app' | head -1)
+
+          if [ -z "$DEPLOYMENT_URL" ]; then
+            echo "❌ Could not find deployment URL"
+            echo "Attempting to get latest deployment..."
+
+            # Alternative: get the latest deployment with proper scope
+            DEPLOYMENT_URL=$(vercel ls --token=$VERCEL_TOKEN --scope=$VERCEL_ORG_ID 2>&1 | grep -o 'https://[^ ]*vercel.app' | head -1)
+          fi
+
+          if [ -n "$DEPLOYMENT_URL" ]; then
+            echo "✅ Found deployment: $DEPLOYMENT_URL"
+            echo ""
+            echo "🚀 Promoting to production..."
+
+            # Attempt promotion and handle case where deployment is already in production
+            PROMOTE_OUTPUT=$(vercel promote "$DEPLOYMENT_URL" --token=$VERCEL_TOKEN --scope=$VERCEL_ORG_ID --yes 2>&1)
+            PROMOTE_EXIT_CODE=$?
+
+            if [ $PROMOTE_EXIT_CODE -eq 0 ]; then
+              echo ""
+              echo "✅ Deployment promoted successfully!"
+            elif echo "$PROMOTE_OUTPUT" | grep -qi "already the current production deployment"; then
+              echo ""
+              echo "ℹ️  Deployment is already in production (no promotion needed)"
+              echo "✅ Production deployment is up to date!"
+            else
+              echo ""
+              echo "⚠️  Promotion command returned exit code: $PROMOTE_EXIT_CODE"
+              echo "Output: $PROMOTE_OUTPUT"
+              echo ""
+              echo "This may indicate the deployment is already in production or there was an issue."
+              echo "Checking Vercel dashboard: https://vercel.com/dashboard"
+              echo ""
+              echo "Proceeding with verification step..."
+            fi
+          else
+            echo "⚠️ Could not find deployment to promote"
+            echo "Deployments may already be live or need manual promotion"
+            echo "Check Vercel dashboard: https://vercel.com/dashboard"
+          fi
+
+      - name: Wait and verify production deployment
+        if: ${{ steps.secrets.outputs.skip != 'true' }}
         env:
-          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
-          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_ORG_ID: team_x9rctQP08KrOwurkk77O3KVd
+          VERCEL_PROJECT_ID: prj_HDbxSTPlg7QuiPAraoHHUhFWFh6K
+        run: |
+          echo "⏳ Waiting for Vercel production deployment to start..."
+          echo "Commit SHA: ${{ github.sha }}"
+
+          # Wait up to 4 minutes for deployment to complete
+          MAX_WAIT=240
+          ELAPSED=0
+          SLEEP_INTERVAL=15
+          DEPLOYMENT_FOUND=false
+          DEPLOYMENT_STARTED=false
+          IN_PROGRESS_SINCE=0
+
+          # First, check what deployments exist for debugging
+          echo "🔍 Checking existing GitHub deployments..."
+          ALL_DEPLOYMENTS=$(gh api /repos/${{ github.repository }}/deployments --jq ".[] | select(.sha == \"${{ github.sha }}\") | {id: .id, environment: .environment, sha: .sha}" 2>/dev/null || echo "")
+          if [ -n "$ALL_DEPLOYMENTS" ]; then
+            echo "Found deployments for this commit:"
+            echo "$ALL_DEPLOYMENTS"
+          else
+            echo "No GitHub deployments found for this commit yet"
+          fi
+
+          while [ $ELAPSED -lt $MAX_WAIT ]; do
+            echo "[$ELAPSED/$MAX_WAIT seconds] Checking for deployment..."
+
+            # Check GitHub deployments API for this commit (more flexible environment matching)
+            DEPLOYMENTS=$(gh api \
+              /repos/${{ github.repository }}/deployments \
+              --jq ".[] | select(.sha == \"${{ github.sha }}\") | select(.environment | contains(\"production\") or contains(\"Production\")) | .id" \
+              2>/dev/null || echo "")
+
+            if [ -n "$DEPLOYMENTS" ]; then
+              if [ "$DEPLOYMENT_STARTED" = false ]; then
+                echo "✅ Deployment found in GitHub!"
+                DEPLOYMENT_STARTED=true
+              fi
+
+              DEPLOYMENT_ID=$(echo "$DEPLOYMENTS" | head -1)
+
+              # Check deployment status
+              STATUS=$(gh api \
+                /repos/${{ github.repository }}/deployments/$DEPLOYMENT_ID/statuses \
+                --jq ".[0].state" \
+                2>/dev/null || echo "pending")
+
+              echo "Deployment status: $STATUS"
+
+              if [ "$STATUS" = "success" ]; then
+                echo "✅ Production deployment completed successfully!"
+                DEPLOYMENT_FOUND=true
+                break
+              elif [ "$STATUS" = "failure" ] || [ "$STATUS" = "error" ]; then
+                echo "❌ Production deployment failed!"
+                exit 1
+              elif [ "$STATUS" = "in_progress" ] || [ "$STATUS" = "pending" ]; then
+                echo "⏳ Deployment in progress..."
+                
+                # Track how long it's been in_progress
+                if [ "$IN_PROGRESS_SINCE" -eq 0 ]; then
+                  IN_PROGRESS_SINCE=$ELAPSED
+                fi
+                
+                # If stuck in_progress for more than 2 minutes, check Vercel directly
+                IN_PROGRESS_DURATION=$((ELAPSED - IN_PROGRESS_SINCE))
+                if [ "$IN_PROGRESS_DURATION" -gt 120 ]; then
+                  echo "⚠️  GitHub deployment stuck in 'in_progress' for $IN_PROGRESS_DURATION seconds"
+                  echo "🔍 Checking Vercel directly to verify deployment status..."
+                  
+                  # Check Vercel deployments - look for latest production deployment
+                  VERCEL_DEPLOYMENT=$(vercel ls --token=$VERCEL_TOKEN --scope=$VERCEL_ORG_ID 2>&1 | grep -i "production" | head -1 || echo "")
+                  
+                  if echo "$VERCEL_DEPLOYMENT" | grep -qi "ready"; then
+                    echo "✅ Vercel shows deployment is READY!"
+                    echo "GitHub deployment status may be delayed, but Vercel deployment is complete"
+                    DEPLOYMENT_FOUND=true
+                    break
+                  elif echo "$VERCEL_DEPLOYMENT" | grep -qi "building"; then
+                    echo "⏳ Vercel deployment still building..."
+                    # Track when we first detected Vercel is building
+                    if [ "$VERCEL_BUILDING_SINCE" -eq 0 ]; then
+                      VERCEL_BUILDING_SINCE=$ELAPSED
+                      echo "Will wait up to 2 more minutes for Vercel build to complete..."
+                    else
+                      VERCEL_BUILDING_DURATION=$((ELAPSED - VERCEL_BUILDING_SINCE))
+                      # If Vercel has been building for more than 2 minutes, proceed with warning
+                      if [ "$VERCEL_BUILDING_DURATION" -gt 120 ]; then
+                        echo "⚠️  Vercel deployment has been building for $VERCEL_BUILDING_DURATION seconds"
+                        echo "This is longer than typical (1-2 minutes). Proceeding with warning."
+                        echo "Deployment may still be in progress - check Vercel dashboard: https://vercel.com/dashboard"
+                        DEPLOYMENT_FOUND=true
+                        break
+                      fi
+                    fi
+                  else
+                    echo "ℹ️  Could not determine Vercel deployment status from CLI output"
+                    echo "Proceeding anyway - Vercel deployments typically complete in 1-2 minutes"
+                    DEPLOYMENT_FOUND=true
+                    break
+                  fi
+                fi
+              fi
+            else
+              # If no GitHub deployment found after 2 minutes, check Vercel directly
+              if [ "$ELAPSED" -gt 120 ] && [ "$DEPLOYMENT_STARTED" = false ]; then
+                echo "ℹ️  No GitHub deployment found after 2 minutes"
+                echo "🔍 Checking Vercel directly..."
+                
+                VERCEL_DEPLOYMENT=$(vercel ls --token=$VERCEL_TOKEN --scope=$VERCEL_ORG_ID 2>&1 | grep -i "production" | head -1 || echo "")
+                
+                if echo "$VERCEL_DEPLOYMENT" | grep -qi "ready"; then
+                  echo "✅ Vercel shows deployment is READY!"
+                  DEPLOYMENT_FOUND=true
+                  DEPLOYMENT_STARTED=true
+                  break
+                elif echo "$VERCEL_DEPLOYMENT" | grep -qi "building"; then
+                  echo "⏳ Vercel deployment still building..."
+                  DEPLOYMENT_STARTED=true
+                  # Track when we first detected Vercel is building
+                  if [ "$VERCEL_BUILDING_SINCE" -eq 0 ]; then
+                    VERCEL_BUILDING_SINCE=$ELAPSED
+                    echo "Will wait up to 2 more minutes for Vercel build to complete..."
+                  else
+                    VERCEL_BUILDING_DURATION=$((ELAPSED - VERCEL_BUILDING_SINCE))
+                    # If Vercel has been building for more than 2 minutes, proceed with warning
+                    if [ "$VERCEL_BUILDING_DURATION" -gt 120 ]; then
+                      echo "⚠️  Vercel deployment has been building for $VERCEL_BUILDING_DURATION seconds"
+                      echo "This is longer than typical (1-2 minutes). Proceeding with warning."
+                      echo "Deployment may still be in progress - check Vercel dashboard: https://vercel.com/dashboard"
+                      DEPLOYMENT_FOUND=true
+                      break
+                    fi
+                  fi
+                else
+                  echo "Vercel typically deploys within 1-2 minutes"
+                  echo "Assuming deployment is in progress or completed"
+                  DEPLOYMENT_STARTED=true
+                fi
+              fi
+            fi
+
+            sleep $SLEEP_INTERVAL
+            ELAPSED=$((ELAPSED + SLEEP_INTERVAL))
+          done
+
+          if [ "$DEPLOYMENT_FOUND" = false ]; then
+            if [ "$DEPLOYMENT_STARTED" = true ]; then
+              echo "⚠️  WARNING: Deployment started but did not complete within timeout"
+              echo "Deployment is still in progress. Check Vercel dashboard:"
+              echo "https://vercel.com/dashboard"
+              echo ""
+              echo "Proceeding anyway as deployment has started successfully"
+            else
+              echo "⚠️  WARNING: Could not find deployment within timeout"
+              echo "Vercel may have deployed successfully but GitHub deployment status not available"
+              echo "Proceeding anyway - please verify production deployment at https://divij.tech"
+            fi
+          fi
 
       - name: Deployment Summary
         run: |

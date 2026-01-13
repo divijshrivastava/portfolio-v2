@@ -4,20 +4,37 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { HeroImage } from '@/components/hero-image';
 import { createClient } from '@/lib/supabase/server';
+import { NewsletterCTA } from '@/components/newsletter/newsletter-cta';
 
 export const revalidate = 3600;
 
 export default async function Home() {
-  const supabase = await createClient();
+  let featuredProjects: any[] = [];
 
-  // Fetch featured projects
-  const { data: featuredProjects } = await supabase
-    .from('projects')
-    .select('*')
-    .eq('status', 'published')
-    .eq('featured', true)
-    .order('start_date', { ascending: false })
-    .limit(4);
+  try {
+    const supabase = await createClient();
+
+    // Fetch featured projects
+    const { data, error } = await supabase
+      .from('projects')
+      .select('*')
+      .eq('status', 'published')
+      .eq('featured', true)
+      .order('start_date', { ascending: false })
+      .limit(4);
+
+    if (error) {
+      console.error('Error fetching featured projects:', error);
+      // Continue with empty projects array instead of crashing
+      featuredProjects = [];
+    } else {
+      featuredProjects = data || [];
+    }
+  } catch (error) {
+    console.error('Error initializing Supabase client or fetching projects:', error);
+    // Continue with empty projects array instead of crashing
+    featuredProjects = [];
+  }
   return (
     <div className="min-h-screen">
       {/* Hero Section */}
@@ -51,6 +68,16 @@ export default async function Home() {
               <Button asChild variant="outline" size="lg">
                 <Link href="/projects">View Projects</Link>
               </Button>
+            </div>
+
+            {/* Newsletter CTA (Hero) */}
+            <div className="pt-2">
+              <NewsletterCTA
+                source="homepage_hero"
+                title="Get my best engineering write-ups"
+                description="Occasional emails on system design, performance, and real production lessons."
+                className="max-w-xl"
+              />
             </div>
           </div>
 

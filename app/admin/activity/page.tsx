@@ -3,8 +3,10 @@
 import { useState, useEffect } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Activity, Trash2, Calendar } from 'lucide-react';
+import { Activity, Trash2, Calendar, BarChart3 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import Link from 'next/link';
+import { TableSkeleton } from '@/components/admin/loading-skeleton';
 
 interface UserActivity {
   id: string;
@@ -26,13 +28,42 @@ export default function ActivityPage() {
   const loadActivities = async () => {
     const supabase = createClient();
 
-    const { count } = await supabase
+    // Filter to show only major/important activities
+    // Exclude: admin pages, API routes, static assets, health checks, etc.
+    const excludePatterns = [
+      '/admin%',
+      '/api/%',
+      '/_next/%',
+      '/favicon.ico',
+      '/robots.txt',
+      '/sitemap.xml',
+      '/manifest.json',
+      '%.js',
+      '%.css',
+      '%.png',
+      '%.jpg',
+      '%.svg',
+      '%.ico',
+      '%.woff%',
+    ];
+
+    let countQuery = supabase
       .from('user_activity')
       .select('*', { count: 'exact', head: true });
 
-    const { data, error } = await supabase
+    let dataQuery = supabase
       .from('user_activity')
-      .select('*')
+      .select('*');
+
+    // Apply exclusion filters to both queries
+    excludePatterns.forEach(pattern => {
+      countQuery = countQuery.not('page_visited', 'like', pattern);
+      dataQuery = dataQuery.not('page_visited', 'like', pattern);
+    });
+
+    const { count } = await countQuery;
+
+    const { data, error } = await dataQuery
       .order('created_at', { ascending: false })
       .limit(100);
 
@@ -66,22 +97,38 @@ export default function ActivityPage() {
   };
 
   if (isLoading) {
-    return <div>Loading...</div>;
+    return (
+      <div className="space-y-8">
+        <div>
+          <div className="h-9 w-48 bg-muted animate-pulse rounded mb-2" />
+          <div className="h-5 w-64 bg-muted animate-pulse rounded" />
+        </div>
+        <TableSkeleton rows={5} />
+      </div>
+    );
   }
 
   return (
-    <div>
-      <div className="flex items-center justify-between mb-8">
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-3xl font-bold">User Activity</h2>
+          <h1 className="text-4xl font-bold tracking-tight">User Activity</h1>
           <p className="text-muted-foreground mt-2">
-            Total visits: {totalCount} (showing last 100)
+            Major page visits: {totalCount} (showing last 100, filtered to exclude admin/API/assets)
           </p>
         </div>
-        <Button variant="destructive" onClick={handleClearAll}>
-          <Trash2 className="mr-2 h-4 w-4" />
-          Clear All
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="outline" asChild>
+            <Link href="/admin/activity/analytics">
+              <BarChart3 className="mr-2 h-4 w-4" />
+              View Analytics
+            </Link>
+          </Button>
+          <Button variant="destructive" onClick={handleClearAll}>
+            <Trash2 className="mr-2 h-4 w-4" />
+            Clear All
+          </Button>
+        </div>
       </div>
 
       {activities.length === 0 ? (

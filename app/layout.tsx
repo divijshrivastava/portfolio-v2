@@ -4,6 +4,8 @@ import { Navigation } from "@/components/layout/navigation";
 import { Footer } from "@/components/layout/footer";
 import { ThemeProvider } from "@/components/theme-provider";
 
+const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "https://divij.tech";
+
 export const metadata: Metadata = {
   title: {
     default: "Divij Shrivastava - Senior Full-Stack Engineer",
@@ -16,16 +18,25 @@ export const metadata: Metadata = {
   openGraph: {
     type: "website",
     locale: "en_US",
-    url: "https://divij.tech",
+    url: baseUrl,
     title: "Divij Shrivastava - Senior Full-Stack Engineer",
     description: "Portfolio of Divij Shrivastava - Senior Full-Stack Engineer specializing in web development, cloud architecture, and modern tech solutions.",
     siteName: "Divij Shrivastava Portfolio",
+    images: [
+      {
+        url: `${baseUrl}/og-image.png`,
+        width: 1200,
+        height: 630,
+        alt: "Divij Shrivastava - Senior Full-Stack Engineer",
+      },
+    ],
   },
   twitter: {
     card: "summary_large_image",
     title: "Divij Shrivastava - Senior Full-Stack Engineer",
     description: "Portfolio of Divij Shrivastava - Senior Full-Stack Engineer specializing in web development and cloud architecture.",
     creator: "@divijshrivastava",
+    images: [`${baseUrl}/og-image.png`],
   },
 };
 

@@ -1,0 +1,148 @@
+name: Deploy Supabase Edge Functions
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'supabase/functions/**'
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  deploy-qa:
+    name: Deploy Edge Functions to QA
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Check required secrets (QA)
+        id: secrets
+        shell: bash
+        run: |
+          if [ -z "${{ secrets.SUPABASE_ACCESS_TOKEN }}" ] || [ -z "${{ secrets.SUPABASE_QA_PROJECT_REF }}" ]; then
+            echo "⚠️ Missing required Supabase secrets. Skipping function deploy."
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Setup Supabase CLI
+        if: ${{ steps.secrets.outputs.skip != 'true' }}
+        uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Link to QA Supabase
+        if: ${{ steps.secrets.outputs.skip != 'true' }}
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+        run: |
+          supabase link --project-ref ${{ secrets.SUPABASE_QA_PROJECT_REF }}
+
+      - name: Deploy send-newsletter (QA)
+        if: ${{ steps.secrets.outputs.skip != 'true' }}
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+        run: |
+          supabase functions deploy send-newsletter --no-verify-jwt
+
+      - name: Deploy process-scheduled-newsletters (QA)
+        if: ${{ steps.secrets.outputs.skip != 'true' }}
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+        run: |
+          supabase functions deploy process-scheduled-newsletters --no-verify-jwt
+
+      - name: Schedule process-scheduled-newsletters cron (QA)
+        if: ${{ steps.secrets.outputs.skip != 'true' }}
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+        run: |
+          echo "Setting up cron schedule for process-scheduled-newsletters (every minute)"
+          curl -X PATCH \
+            "https://api.supabase.com/v1/projects/${{ secrets.SUPABASE_QA_PROJECT_REF }}/functions/process-scheduled-newsletters" \
+            -H "Authorization: Bearer ${{ secrets.SUPABASE_ACCESS_TOKEN }}" \
+            -H "Content-Type: application/json" \
+            -d '{
+              "verify_jwt": false,
+              "import_map": false,
+              "cron_schedule": "* * * * *"
+            }'
+          echo "Cron schedule configured successfully"
+
+  deploy-production:
+    name: Deploy Edge Functions to Production
+    runs-on: ubuntu-latest
+    environment:
+      name: Production
+      url: https://divij.tech
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Check required secrets (Production)
+        id: secrets
+        shell: bash
+        run: |
+          MISSING=()
+          [ -z "${{ secrets.SUPABASE_ACCESS_TOKEN }}" ] && MISSING+=("SUPABASE_ACCESS_TOKEN")
+          [ -z "${{ secrets.SUPABASE_PROD_PROJECT_REF }}" ] && MISSING+=("SUPABASE_PROD_PROJECT_REF")
+
+          if [ ${#MISSING[@]} -gt 0 ]; then
+            echo "⚠️ Missing required Supabase Production secrets: ${MISSING[*]}. Skipping function deploy."
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Setup Supabase CLI
+        if: ${{ steps.secrets.outputs.skip != 'true' }}
+        uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Link to Production Supabase
+        if: ${{ steps.secrets.outputs.skip != 'true' }}
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+        run: |
+          supabase link --project-ref ${{ secrets.SUPABASE_PROD_PROJECT_REF }}
+
+      - name: Deploy send-newsletter (Production)
+        if: ${{ steps.secrets.outputs.skip != 'true' }}
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+        run: |
+          supabase functions deploy send-newsletter --no-verify-jwt
+
+      - name: Deploy process-scheduled-newsletters (Production)
+        if: ${{ steps.secrets.outputs.skip != 'true' }}
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+        run: |
+          supabase functions deploy process-scheduled-newsletters --no-verify-jwt
+
+      - name: Schedule process-scheduled-newsletters cron (Production)
+        if: ${{ steps.secrets.outputs.skip != 'true' }}
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+        run: |
+          echo "Setting up cron schedule for process-scheduled-newsletters (every minute)"
+          curl -X PATCH \
+            "https://api.supabase.com/v1/projects/${{ secrets.SUPABASE_PROD_PROJECT_REF }}/functions/process-scheduled-newsletters" \
+            -H "Authorization: Bearer ${{ secrets.SUPABASE_ACCESS_TOKEN }}" \
+            -H "Content-Type: application/json" \
+            -d '{
+              "verify_jwt": false,
+              "import_map": false,
+              "cron_schedule": "* * * * *"
+            }'
+          echo "Cron schedule configured successfully"
+
+

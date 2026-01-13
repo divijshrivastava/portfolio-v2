@@ -1,234 +1,322 @@
-# Portfolio V2
+# Portfolio V2 🚀
 
-A modern, fast, mobile-first portfolio website built with Next.js 14, Supabase, and Tailwind CSS.
+A production-grade personal portfolio website with blog, projects showcase, and admin dashboard — built with modern full-stack architecture, automated CI/CD, and comprehensive testing infrastructure.
 
-## Features
+🌐 **Live**: https://divij.tech
+🧪 **QA**: https://divij-qa.tech
 
-### Public Features
-- **Homepage** with introduction and featured sections
-- **Blog** with full WYSIWYG editor, markdown support, and image uploads
-- **Projects** showcase with multiple project types (website, YouTube, coding, etc.)
-- **About** page with skills and experience
-- **Contact** form with message storage
-- **Resume** viewer and download
+⸻
 
-### Admin Features
-- Secure admin authentication
-- Blog management (create, edit, delete, approve/draft)
+## TL;DR
+
+This is my personal portfolio website built as a real-world full-stack product with authentication, admin tooling, dual QA/Production environments, automated database migrations, CI/CD pipelines, and comprehensive testing. Not just a static site — a production-ready application with proper DevOps practices.
+
+⸻
+
+## 📸 Screenshots
+
+### Homepage
+![Homepage](.github/screenshots/homepage.png)
+
+### Blog
+![Blog](.github/screenshots/blog.png)
+
+### Projects
+![Projects](.github/screenshots/projects.png)
+
+### Admin Panel
+
+<details>
+<summary>Click to view all admin panel screenshots</summary>
+
+#### Dashboard
+![Admin Dashboard](.github/screenshots/admin-dashboard.png)
+
+#### Blog Management
+![Admin Blogs](.github/screenshots/admin-blogs.png)
+
+#### Project Management
+![Admin Projects](.github/screenshots/admin-projects.png)
+
+#### Messages Inbox
+![Admin Messages](.github/screenshots/admin-messages.png)
+
+#### User Activity Tracking
+![Admin Activity](.github/screenshots/admin-activity.png)
+
+#### Resume Management
+![Admin Resume](.github/screenshots/admin-resume.png)
+
+</details>
+
+⸻
+
+## ✨ Features
+
+**Public Features**
+- Responsive portfolio website
+- Blog with rich text editor and markdown support
+- Projects showcase with multiple types
+- Contact form with message storage
+- Resume viewer and download
+- SEO-optimized pages
+
+**Admin Features**
+- Secure authentication with Supabase Auth
+- Blog management (create, edit, delete, draft/publish)
 - Project management (CRUD operations)
 - Message inbox from contact form
-- User activity tracking (IP addresses, pages visited)
+- User activity tracking
 - Resume upload and management
 - Dashboard with statistics
 
-## Tech Stack
+⸻
 
-- **Frontend**: Next.js 14 (App Router), TypeScript, Tailwind CSS
-- **UI Components**: shadcn/ui
-- **Database**: Supabase (PostgreSQL)
-- **Authentication**: Supabase Auth
-- **File Storage**: Supabase Storage
-- **Hosting**: Vercel
-- **Rich Text Editor**: Tiptap
+## 🧱 Tech Stack
 
-## Performance Features
+**Frontend**
+- Next.js 14 (App Router)
+- TypeScript
+- Tailwind CSS
+- shadcn/ui components
 
-- Server-Side Rendering (SSR) for dynamic content
-- Static Site Generation (SSG) for blog posts
-- Incremental Static Regeneration (ISR)
-- Next.js Image optimization (automatic WebP/AVIF)
-- Automatic code splitting
-- Edge functions for API routes
-- Mobile-first responsive design
+**Backend & Services**
+- Supabase (PostgreSQL, Auth, Storage)
+- Server Actions / API Routes
+- Row Level Security (RLS)
 
-## Cost
+**Testing**
+- Vitest (unit tests)
+- Playwright (E2E tests)
 
-**$0/month** - Completely free using:
-- Vercel Free Tier (100GB bandwidth/month)
-- Supabase Free Tier (500MB database, 1GB storage)
+**DevOps & Tooling**
+- GitHub Actions (CI/CD)
+- Vercel (dual projects for QA + Production)
+- ESLint & TypeScript strict mode
+- Trivy (security scanning)
+- Automated database migrations
 
-## Quick Start
+⸻
 
-### Prerequisites
+## 🏗 Architecture
 
+**Dual Environment Setup**
+```
+GitHub Push → CI Tests → QA Deploy → Manual Approval → Production Deploy
+                ↓            ↓                             ↓
+           (7 minutes)  (divij-qa.tech)             (divij.tech)
+```
+
+- **QA Environment**: Auto-deploys on push to `main`, separate Supabase DB
+- **Production Environment**: Requires manual approval, production Supabase DB
+- **Database Migrations**: Auto-apply to QA → approve → auto-apply to Production
+
+⸻
+
+## 🔄 CI/CD Pipeline
+
+**On every push/PR:**
+- Linting and type-checking
+- Unit tests (Vitest)
+- Build verification
+- E2E tests (Playwright)
+- Security scanning (Trivy)
+
+**On merge to main:**
+- All CI tests must pass (~7 minutes)
+- Auto-deploy to QA environment
+- Wait for manual approval
+- Auto-deploy to Production
+
+**Database Migrations:**
+- Create migration in `supabase/migrations/`
+- Push to GitHub
+- Auto-apply to QA database
+- Test on divij-qa.tech
+- Approve in GitHub Actions
+- Auto-apply to Production database
+
+⸻
+
+## 🧪 Testing
+
+**Run all tests**
+```bash
+npm test
+```
+
+**Unit tests**
+```bash
+npm run test:unit
+```
+
+**E2E tests**
+```bash
+npx playwright install
+npm run test:e2e
+```
+
+**Type checking**
+```bash
+npm run type-check
+```
+
+⸻
+
+## 🛠 Local Development
+
+**Prerequisites**
 - Node.js 18+
-- A Supabase account
-- A Vercel account (for deployment)
+- Supabase account (free tier)
+- Vercel account (for deployment)
 
-### Installation
-
-1. Clone the repository:
+**Setup**
 ```bash
-git clone <your-repo-url>
+# Clone and install
+git clone https://github.com/yourusername/portfolio-v2.git
 cd portfolio-v2
-```
-
-2. Install dependencies:
-```bash
 npm install
-```
 
-3. Set up environment variables:
-```bash
+# Environment variables
 cp .env.local.example .env.local
-```
+# Edit .env.local with your Supabase credentials
 
-Edit `.env.local` with your Supabase credentials.
-
-4. Set up Supabase:
-- Create a new Supabase project
-- Run the SQL schema from `supabase-schema.sql` in Supabase SQL Editor
-- Create storage buckets (blog-images, project-images, resume-files, uploads)
-- Create your admin user and set `is_admin = true` in the profiles table
-
-5. Run the development server:
-```bash
+# Run development server
 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) to view the site.
+**Environment Variables**
+```env
+NEXT_PUBLIC_SUPABASE_URL=https://xxxxx.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
+SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
+NEXT_PUBLIC_APP_URL=http://localhost:3000
+```
 
-## Migration from Old Portfolio
-
-If you're migrating from an existing MySQL-based portfolio:
-
-1. Export data from MySQL:
+**Database Setup**
 ```bash
-node scripts/export-from-mysql.js
+# Install Supabase CLI
+npm install -g supabase
+
+# Link to your project
+supabase link --project-ref your-project-ref
+
+# Push migrations
+supabase db push
 ```
 
-2. Import to Supabase:
-```bash
-node scripts/import-to-supabase.js
-```
-
-3. Migrate images:
-```bash
-node scripts/migrate-images.js
-```
-
-See [SETUP.md](./SETUP.md) for detailed setup instructions.
-
-## Deployment
-
-### Deploy to Vercel
-
-1. Push your code to GitHub
-
-2. Go to [vercel.com](https://vercel.com) and import your repository
-
-3. Add environment variables in Vercel project settings
-
-4. Deploy!
-
-Your portfolio will be live at `https://your-project.vercel.app`
-
-## Project Structure
-
-```
-portfolio-v2/
-├── app/                  # Next.js app directory
-│   ├── (public pages)/   # Blog, Projects, About, Contact, Resume
-│   ├── admin/            # Admin dashboard and management
-│   ├── api/              # API routes
-│   └── login/            # Admin login
-├── components/           # React components
-│   ├── ui/               # shadcn/ui components
-│   ├── layout/           # Navigation, Footer
-│   ├── blog/             # Blog-specific components
-│   ├── projects/         # Project components
-│   └── admin/            # Admin components
-├── lib/                  # Utility functions
-│   ├── supabase/         # Supabase clients
-│   └── utils.ts          # Helper functions
-├── scripts/              # Migration scripts
-└── public/               # Static assets
-```
-
-## Admin Access
-
-1. Go to `/login`
-2. Sign in with your admin credentials
-3. Access the admin dashboard at `/admin`
-
-### Creating an Admin User
-
-After setting up Supabase, run this SQL:
-
+**Create Admin User**
 ```sql
 UPDATE public.profiles
 SET is_admin = true
 WHERE email = 'your-email@example.com';
 ```
 
-## Features in Detail
+⸻
 
-### Blog System
-- Rich text editor with image uploads
-- Draft/Published status
-- View tracking
-- SEO-friendly URLs (slugs)
-- Reading time estimation
-- Thumbnail and cover image support
+## 🚀 Deployment
 
-### Project Management
-- Multiple project types (website, YouTube, coding, etc.)
-- GitHub, YouTube, and external link support
-- Tag system
-- Draft/Published workflow
+**Production Setup**
+1. Create two Supabase projects (QA + Production)
+2. Create two Vercel projects (QA + Production)
+3. Configure GitHub Secrets and Environment
+4. Push to `main` branch
+5. Approve production deployment in GitHub Actions
 
-### Contact Form
-- Spam-free message storage
-- Read/Unread status
-- Email notifications (optional)
+**Rollback**
+- Vercel dashboard → Previous deployment → "Promote to Production"
+- Rollback complete in ~30 seconds
 
-### User Activity Tracking
-- IP address logging
-- Page visit tracking
-- User agent detection
-- Referrer tracking
+**Cost: ~$15/year**
+- Vercel Free Tier: $0 (2 projects)
+- Supabase Free Tier: $0 (2 projects)
+- Domain (divij.tech): ~$15/year
 
-## Customization
+⸻
 
-### Colors and Styling
-Edit `tailwind.config.ts` and `app/globals.css` to customize colors and styles.
+## 📁 Project Structure
 
-### Content
-- Update the About page in `app/about/page.tsx`
-- Change social links in `components/layout/footer.tsx`
-- Modify homepage content in `app/page.tsx`
+```
+portfolio-v2/
+├── app/                    # Next.js app directory
+│   ├── (public pages)/     # Blog, Projects, About, Contact
+│   ├── admin/              # Admin dashboard
+│   ├── api/                # API routes
+│   └── login/              # Auth
+├── components/             # React components
+│   ├── ui/                 # shadcn/ui components
+│   └── admin/              # Admin components
+├── lib/
+│   ├── supabase/           # Supabase clients
+│   └── utils.ts            # Helpers
+├── supabase/
+│   └── migrations/         # Database migrations
+├── .github/
+│   └── workflows/          # CI/CD pipelines
+└── tests/
+    ├── unit/               # Vitest tests
+    └── e2e/                # Playwright tests
+```
 
-## Performance
+⸻
 
-This portfolio achieves excellent performance scores:
-- Lighthouse Score: 95+
-- First Contentful Paint: < 1s
-- Time to Interactive: < 2s
-- Mobile-first and fully responsive
+## 🔒 Security
 
-## Security
-
-- Row Level Security (RLS) enabled on all Supabase tables
+- Row Level Security (RLS) on all Supabase tables
 - Admin-only access to sensitive data
-- Secure authentication with Supabase Auth
-- Environment variables for sensitive keys
+- Environment variables for secrets
+- Automated security scanning in CI
+- Edge Runtime for fast, secure middleware
 
-## Support
+⸻
 
-For issues or questions:
-- Check [SETUP.md](./SETUP.md) for detailed setup instructions
-- Review the Supabase schema in `supabase-schema.sql`
-- Check migration scripts in `/scripts`
+## 📊 Performance
 
-## License
+- Server-Side Rendering (SSR)
+- Static Site Generation (SSG)
+- Incremental Static Regeneration (ISR)
+- Next.js Image optimization
+- Automatic code splitting
+- Lighthouse Score: 95+
+
+⸻
+
+## 🗺 Roadmap
+
+- [ ] Email notifications for contact form
+- [ ] Analytics dashboard
+- [ ] Dark mode
+- [ ] Blog categories and tags
+- [ ] Search functionality
+
+⸻
+
+## 👤 About
+
+Built by **Divij Shrivastava** — a full-stack developer focused on building scalable, production-ready systems with clean architecture and strong engineering practices.
+
+⸻
+
+## 🤝 Contributing
+
+This is a personal portfolio project, but feel free to fork it, explore the codebase, or open an issue if you spot improvements.
+
+⸻
+
+## 📄 License
 
 MIT License - feel free to use this for your own portfolio!
 
-## Credits
+⸻
+
+## 🙏 Credits
 
 Built with:
-- [Next.js](https://nextjs.org/)
-- [Supabase](https://supabase.com/)
-- [Tailwind CSS](https://tailwindcss.com/)
-- [shadcn/ui](https://ui.shadcn.com/)
-- [Tiptap](https://tiptap.dev/)
+- [Next.js](https://nextjs.org/) - React framework
+- [Supabase](https://supabase.com/) - Backend as a Service
+- [Tailwind CSS](https://tailwindcss.com/) - Styling
+- [shadcn/ui](https://ui.shadcn.com/) - UI components
+- [Tiptap](https://tiptap.dev/) - Rich text editor
+- [Vercel](https://vercel.com/) - Hosting
+- [Vitest](https://vitest.dev/) - Unit testing
+- [Playwright](https://playwright.dev/) - E2E testing

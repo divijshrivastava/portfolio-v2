@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import Link from 'next/link';
 import { getProjectImageUrl } from '@/lib/utils/youtube';
+import { TrackPageView } from '@/components/track-page-view';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -21,26 +22,77 @@ export async function generateMetadata({
 }: {
   params: Promise<{ slug: string }>
 }) {
-  const { slug } = await params;
-  const supabase = await createClient();
+  try {
+    const { slug } = await params;
+    const supabase = await createClient();
 
-  const { data: project } = await supabase
-    .from('projects')
-    .select('title, description')
-    .eq('slug', slug)
-    .eq('status', 'published')
-    .single();
+    const { data: project, error } = await supabase
+      .from('projects')
+      .select('title, description, image_url, youtube_url, og_image_url')
+      .eq('slug', slug)
+      .eq('status', 'published')
+      .single();
 
-  if (!project) {
+    if (error || !project) {
+      console.error('Metadata fetch error:', error);
+      return {
+        title: 'Project Not Found',
+      };
+    }
+
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://divij.tech';
+    
+    // Prefer optimized OG image if available, otherwise use regular image
+    let ogImage = `${baseUrl}/og-image.png`; // Default fallback (1200x630)
+    
+    if (project.og_image_url && project.og_image_url.trim()) {
+      // Use optimized OG image if available
+      ogImage = project.og_image_url.startsWith('http') 
+        ? project.og_image_url 
+        : `${baseUrl}${project.og_image_url.startsWith('/') ? project.og_image_url : `/${project.og_image_url}`}`;
+    } else {
+      // Fallback to regular image
+      const projectImage = getProjectImageUrl(project.image_url, project.youtube_url);
+      if (projectImage && projectImage.trim()) {
+        if (projectImage.startsWith('http://') || projectImage.startsWith('https://')) {
+          ogImage = projectImage;
+        } else {
+          const relativePath = projectImage.startsWith('/') ? projectImage : `/${projectImage}`;
+          ogImage = `${baseUrl}${relativePath}`;
+        }
+      }
+    }
+
     return {
-      title: 'Project Not Found',
+      title: project.title,
+      description: project.description || project.title,
+      openGraph: {
+        title: project.title,
+        description: project.description || project.title,
+        type: 'article',
+        url: `${baseUrl}/projects/${slug}`,
+        images: [
+          {
+            url: ogImage,
+            width: 1200,
+            height: 630,
+            alt: project.title,
+          },
+        ],
+      },
+      twitter: {
+        card: 'summary_large_image',
+        title: project.title,
+        description: project.description || project.title,
+        images: [ogImage],
+      },
+    };
+  } catch (error) {
+    console.error('Metadata generation error:', error);
+    return {
+      title: 'Project',
     };
   }
-
-  return {
-    title: project.title,
-    description: project.description || project.title,
-  };
 }
 
 export default async function ProjectDetail({
@@ -75,6 +127,7 @@ export default async function ProjectDetail({
 
   return (
     <div className="min-h-screen">
+      <TrackPageView type="project" id={project.id} />
       <article className="container mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div className="max-w-4xl mx-auto">
           <Button asChild variant="ghost" className="mb-8">

@@ -1,0 +1,366 @@
+// @ts-nocheck
+import { serve } from "https://deno.land/std/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.89.0";
+
+type Audience =
+  | { type: "all" }
+  | { type: "source"; source: string }
+  | { type: "manual"; emails: string[] };
+
+function normalizeEmail(email: string): string {
+  return email.trim().toLowerCase();
+}
+
+function isValidEmail(email: string): boolean {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+}
+
+function uniq<T>(arr: T[]): T[] {
+  return Array.from(new Set(arr));
+}
+
+function getSiteUrl(): string {
+  return Deno.env.get("SITE_URL") || Deno.env.get("NEXT_PUBLIC_SITE_URL") || "https://divij.tech";
+}
+
+function getResendConfig() {
+  const apiKey = Deno.env.get("RESEND_API_KEY");
+  const from = Deno.env.get("RESEND_FROM_EMAIL") || "Divij <onboarding@resend.dev>";
+  if (!apiKey) throw new Error("Missing RESEND_API_KEY");
+  return { apiKey, from };
+}
+
+function renderNewsletterEmail(input: {
+  subject: string;
+  previewText?: string | null;
+  bodyHtml: string;
+  attachments: any[];
+  unsubscribeUrl?: string | null;
+}) {
+  const siteUrl = getSiteUrl().replace(/\/$/, "");
+
+  const linksHtml = (input.attachments || [])
+    .map((a) => {
+      if (!a || typeof a !== "object") return null;
+      if (a.type === "blog" && a.slug) {
+        const url = `${siteUrl}/blog/${a.slug}`;
+        return `<li><a href="${url}">${a.title || url}</a></li>`;
+      }
+      if (a.type === "project" && a.slug) {
+        const url = `${siteUrl}/projects/${a.slug}`;
+        return `<li><a href="${url}">${a.title || url}</a></li>`;
+      }
+      if (a.type === "link" && a.url) {
+        const safeUrl = String(a.url);
+        return `<li><a href="${safeUrl}">${a.title || safeUrl}</a></li>`;
+      }
+      return null;
+    })
+    .filter(Boolean)
+    .join("");
+
+  const attachmentsBlock = linksHtml
+    ? `
+      <hr style="margin:24px 0;border:none;border-top:1px solid #eee;" />
+      <h3 style="margin:0 0 8px 0;">Links</h3>
+      <ul style="margin:0;padding-left:18px;">
+        ${linksHtml}
+      </ul>
+    `
+    : "";
+
+  const preview = input.previewText ? `<p style="color:#666;margin:0 0 16px 0;">${input.previewText}</p>` : "";
+  const unsubscribeUrl = input.unsubscribeUrl ? String(input.unsubscribeUrl) : "";
+  const unsubscribeBlock = unsubscribeUrl
+    ? `
+      <div style="margin-top:24px;">
+        <a
+          href="${unsubscribeUrl}"
+          style="display:inline-block;padding:10px 14px;border-radius:8px;border:1px solid #ddd;text-decoration:none;color:#111;font-size:14px;"
+        >
+          Unsubscribe
+        </a>
+      </div>
+    `
+    : "";
+
+  return `
+    <div style="font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial; line-height:1.5; color:#111;">
+      <div style="max-width: 680px; margin: 0 auto; padding: 24px;">
+        <h1 style="margin:0 0 8px 0;">${input.subject}</h1>
+        ${preview}
+        <div>
+          ${input.bodyHtml}
+        </div>
+        ${attachmentsBlock}
+        ${unsubscribeBlock}
+        <hr style="margin:24px 0;border:none;border-top:1px solid #eee;" />
+        <p style="color:#666;font-size:12px;margin:0;">
+          You’re receiving this because you subscribed on ${siteUrl}.
+        </p>
+      </div>
+    </div>
+  `;
+}
+
+async function sendResendEmail(input: { to: string; subject: string; html: string }) {
+  const { apiKey, from } = getResendConfig();
+
+  const emailRes = await fetch("https://api.resend.com/emails", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${apiKey}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      from,
+      to: [input.to],
+      subject: input.subject,
+      html: input.html,
+    }),
+  });
+
+  if (!emailRes.ok) {
+    const err = await emailRes.text();
+    throw new Error(err || `Resend failed: ${emailRes.status}`);
+  }
+
+  const json = (await emailRes.json().catch(() => null)) as any;
+  return { id: json?.id as string | undefined };
+}
+
+serve(async (req) => {
+  try {
+    const secretHeader = req.headers.get("x-newsletter-secret") || "";
+    const expectedSecret = Deno.env.get("NEWSLETTER_WEBHOOK_SECRET") || "";
+    if (expectedSecret && secretHeader !== expectedSecret) {
+      return new Response("Unauthorized", { status: 401 });
+    }
+
+    const payload = await req.json().catch(() => null) as any;
+    const sendId = String(payload?.send_id || "").trim();
+    if (!sendId) return new Response("send_id is required", { status: 400 });
+
+    const supabaseUrl = Deno.env.get("SUPABASE_URL");
+    const serviceRole = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+    if (!supabaseUrl || !serviceRole) {
+      return new Response("Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY", { status: 500 });
+    }
+
+    const supabase = createClient(supabaseUrl, serviceRole);
+
+    const { data: sendRow, error: sendErr } = await supabase
+      .from("newsletter_sends")
+      .select("id, status, audience, newsletter_id, total_recipients, sent_count, failed_count, newsletters(subject, preview_text, body_html, attachments, status)")
+      .eq("id", sendId)
+      .single();
+
+    if (sendErr || !sendRow) return new Response(sendErr?.message || "Send not found", { status: 404 });
+    if (sendRow.status !== "sending") return new Response("Send is not in sending state", { status: 200 });
+
+    const newsletter = (sendRow as any).newsletters;
+    if (!newsletter) return new Response("Newsletter not found", { status: 404 });
+    if (newsletter.status !== "published") return new Response("Newsletter must be published", { status: 400 });
+
+    const audience = sendRow.audience as Audience;
+
+    let recipients: { subscriber_id: string | null; email: string; unsubscribe_token?: string | null }[] = [];
+    if (audience?.type === "all") {
+      let { data, error } = await supabase
+        .from("newsletter_subscribers")
+        .select("id, email, unsubscribe_token")
+        .is("unsubscribed_at", null)
+        .order("created_at", { ascending: true });
+      // Backward-compat: if DB hasn't been migrated yet, retry without unsubscribed filter/token.
+      if (error && String((error as any).message || "").includes("unsubscribed_at")) {
+        ({ data, error } = await supabase
+          .from("newsletter_subscribers")
+          .select("id, email")
+          .order("created_at", { ascending: true }));
+      }
+      if (error) throw error;
+      recipients = (data || []).map((r: any) => ({
+        subscriber_id: r.id,
+        email: r.email,
+        unsubscribe_token: r.unsubscribe_token ?? null,
+      }));
+    } else if (audience?.type === "source") {
+      const source = String((audience as any).source || "").trim();
+      let { data, error } = await supabase
+        .from("newsletter_subscribers")
+        .select("id, email, unsubscribe_token")
+        .is("unsubscribed_at", null)
+        .eq("source", source)
+        .order("created_at", { ascending: true });
+      if (error && String((error as any).message || "").includes("unsubscribed_at")) {
+        ({ data, error } = await supabase
+          .from("newsletter_subscribers")
+          .select("id, email")
+          .eq("source", source)
+          .order("created_at", { ascending: true }));
+      }
+      if (error) throw error;
+      recipients = (data || []).map((r: any) => ({
+        subscriber_id: r.id,
+        email: r.email,
+        unsubscribe_token: r.unsubscribe_token ?? null,
+      }));
+    } else if (audience?.type === "manual") {
+      const rawEmails = Array.isArray((audience as any).emails) ? (audience as any).emails : [];
+      const cleaned = uniq(
+        rawEmails
+          .map((e: any) => (typeof e === "string" ? e : String(e ?? "")))
+          .map(normalizeEmail)
+      ).filter((e) => e && isValidEmail(e));
+      recipients = cleaned.map((email) => ({ subscriber_id: null, email }));
+    } else {
+      return new Response("Unsupported audience type", { status: 400 });
+    }
+
+    // Dedupe + validate
+    const byEmail = new Map<string, { subscriber_id: string | null; email: string; unsubscribe_token?: string | null }>();
+    for (const r of recipients) {
+      const e = normalizeEmail(r.email);
+      if (!e || !isValidEmail(e)) continue;
+      if (!byEmail.has(e)) byEmail.set(e, { subscriber_id: r.subscriber_id, email: e, unsubscribe_token: r.unsubscribe_token ?? null });
+    }
+    recipients = Array.from(byEmail.values());
+
+    // Filter out excluded emails from the audience
+    const excludedEmails = Array.isArray((audience as any).excludedEmails) 
+      ? (audience as any).excludedEmails.map((e: any) => normalizeEmail(String(e || ""))) 
+      : [];
+    
+    if (excludedEmails.length > 0) {
+      const excludedSet = new Set(excludedEmails);
+      recipients = recipients.filter(r => !excludedSet.has(normalizeEmail(r.email)));
+    }
+
+    const siteUrl = getSiteUrl().replace(/\/$/, "");
+    const tokenByEmail = new Map<string, string>();
+    for (const r of recipients) {
+      if (r.unsubscribe_token) tokenByEmail.set(normalizeEmail(r.email), String(r.unsubscribe_token));
+    }
+
+    // Seed deliveries (upsert-ish via insert + ignore conflicts)
+    if (recipients.length > 0) {
+      const seed = recipients.map((r) => ({
+        send_id: sendId,
+        subscriber_id: r.subscriber_id,
+        email: r.email,
+        status: "pending",
+      }));
+
+      // Use upsert with ignoreDuplicates so reruns don't error on (send_id, email) uniqueness.
+      // Note: Supabase query builders are Promise-like but don't always implement `.catch()`.
+      const { error: seedErr } = await supabase
+        .from("newsletter_deliveries")
+        .upsert(seed, { onConflict: "send_id,email", ignoreDuplicates: true });
+      if (seedErr) {
+        // Best-effort: continue anyway and just process existing pending rows.
+        console.warn("Failed to seed deliveries (continuing):", seedErr);
+      }
+    }
+
+    // Fetch pending deliveries
+    const { data: pending, error: pendingErr } = await supabase
+      .from("newsletter_deliveries")
+      .select("id, email")
+      .eq("send_id", sendId)
+      .eq("status", "pending")
+      .order("email", { ascending: true })
+      .limit(5000);
+    if (pendingErr) throw pendingErr;
+
+    let sentCount = 0;
+    let failedCount = 0;
+    
+    // Rate limiting: 2 requests per second = 500ms delay between requests
+    // Add buffer for safety: 600ms delay
+    const DELAY_MS = 600;
+
+    // Helper to sleep
+    const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
+    // Process emails sequentially with rate limiting
+    for (let i = 0; i < (pending?.length || 0); i++) {
+      const d = (pending as any[])[i];
+      try {
+        const emailNorm = normalizeEmail(String(d.email || ""));
+        const token = tokenByEmail.get(emailNorm);
+        const unsubscribeUrl = token ? `${siteUrl}/unsubscribe?token=${encodeURIComponent(token)}` : `${siteUrl}/newsletter`;
+
+        const html = renderNewsletterEmail({
+          subject: newsletter.subject,
+          previewText: newsletter.preview_text,
+          bodyHtml: newsletter.body_html,
+          attachments: newsletter.attachments || [],
+          unsubscribeUrl,
+        });
+
+        const resp = await sendResendEmail({ to: d.email, subject: newsletter.subject, html });
+        sentCount++;
+        await supabase
+          .from("newsletter_deliveries")
+          .update({
+            status: "sent",
+            provider: "resend",
+            provider_message_id: resp.id ?? null,
+            sent_at: new Date().toISOString(),
+            error: null,
+          })
+          .eq("id", d.id);
+
+        // Rate limit: wait before next email (except for last one)
+        if (i < (pending?.length || 0) - 1) {
+          await sleep(DELAY_MS);
+        }
+      } catch (e: any) {
+        failedCount++;
+        await supabase
+          .from("newsletter_deliveries")
+          .update({
+            status: "failed",
+            provider: "resend",
+            error: String(e?.message || e),
+          })
+          .eq("id", d.id);
+
+        // Also wait after failures to avoid hitting rate limits on retries
+        if (i < (pending?.length || 0) - 1) {
+          await sleep(DELAY_MS);
+        }
+      }
+    }
+
+    // Update send summary based on current DB state
+    const [{ count: total }, { count: sent }, { count: failed }] = await Promise.all([
+      supabase.from("newsletter_deliveries").select("*", { count: "exact", head: true }).eq("send_id", sendId),
+      supabase.from("newsletter_deliveries").select("*", { count: "exact", head: true }).eq("send_id", sendId).eq("status", "sent"),
+      supabase.from("newsletter_deliveries").select("*", { count: "exact", head: true }).eq("send_id", sendId).eq("status", "failed"),
+    ]);
+
+    const remaining = (total || 0) - (sent || 0) - (failed || 0);
+    const finalStatus = remaining === 0 ? ((failed || 0) > 0 ? "failed" : "sent") : "sending";
+
+    await supabase
+      .from("newsletter_sends")
+      .update({
+        status: finalStatus,
+        completed_at: remaining === 0 ? new Date().toISOString() : null,
+        total_recipients: total || 0,
+        sent_count: sent || 0,
+        failed_count: failed || 0,
+      })
+      .eq("id", sendId);
+
+    return new Response(JSON.stringify({ sendId, processed: (pending?.length || 0), sent: sentCount, failed: failedCount, status: finalStatus }), {
+      status: 200,
+      headers: { "Content-Type": "application/json" },
+    });
+  } catch (e) {
+    return new Response(String(e), { status: 500 });
+  }
+});
+
+

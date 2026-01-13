@@ -51,7 +51,11 @@ export function getYouTubeThumbnail(youtubeUrl: string): string | null {
  * Returns uploaded image if available, otherwise YouTube thumbnail if available
  */
 export function getProjectImageUrl(imageUrl: string | null, youtubeUrl: string | null): string | null {
-  if (imageUrl) return imageUrl;
-  if (youtubeUrl) return getYouTubeThumbnail(youtubeUrl);
+  // Handle empty strings as null
+  const validImageUrl = imageUrl && imageUrl.trim() ? imageUrl.trim() : null;
+  const validYoutubeUrl = youtubeUrl && youtubeUrl.trim() ? youtubeUrl.trim() : null;
+  
+  if (validImageUrl) return validImageUrl;
+  if (validYoutubeUrl) return getYouTubeThumbnail(validYoutubeUrl);
   return null;
 }

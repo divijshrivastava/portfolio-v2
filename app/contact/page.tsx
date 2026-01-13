@@ -5,8 +5,8 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { MessageSquare, Send, Github, Linkedin, ExternalLink } from 'lucide-react';
-import { createClient } from '@/lib/supabase/client';
+import { MessageSquare, Send, Github, Linkedin, ExternalLink, AlertCircle } from 'lucide-react';
+import { submitContactForm } from '@/app/actions/contact';
 
 export default function ContactPage() {
   const [formData, setFormData] = useState({
@@ -16,20 +16,25 @@ export default function ContactPage() {
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
+    setError(null);
 
-    const supabase = createClient();
+    try {
+      const result = await submitContactForm(formData);
 
-    const { error } = await supabase
-      .from('messages')
-      .insert([formData]);
-
-    if (!error) {
-      setSubmitted(true);
-      setFormData({ name: '', email: '', message: '' });
+      if (result.success) {
+        setSubmitted(true);
+        setFormData({ name: '', email: '', message: '' });
+      } else {
+        setError(result.error || 'Failed to send message. Please try again.');
+      }
+    } catch (err) {
+      console.error('Form submission error:', err);
+      setError('An unexpected error occurred. Please try again.');
     }
 
     setIsSubmitting(false);
@@ -65,6 +70,12 @@ export default function ContactPage() {
               </CardDescription>
             </CardHeader>
             <CardContent>
+              {error && (
+                <div className="mb-6 p-4 bg-destructive/10 border border-destructive/20 rounded-md flex items-start gap-3">
+                  <AlertCircle className="h-5 w-5 text-destructive flex-shrink-0 mt-0.5" />
+                  <p className="text-sm text-destructive">{error}</p>
+                </div>
+              )}
               <form onSubmit={handleSubmit} className="space-y-6">
                 <div className="space-y-2">
                   <label htmlFor="name" className="text-sm font-medium">
