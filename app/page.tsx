@@ -3,25 +3,30 @@ import { ArrowRight, Code, FileText, Briefcase, Layers, Zap, Database, Server, G
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { HeroImage } from '@/components/hero-image';
-import { createClient } from '@/lib/supabase/server';
+import { createPublicClient } from '@/lib/supabase/public';
 import { NewsletterCTA } from '@/components/newsletter/newsletter-cta';
 
 export const revalidate = 3600;
 
+const DATA_FETCH_TIMEOUT_MS = 3000;
+
 export default async function Home() {
   let featuredProjects: any[] = [];
+  const abortController = new AbortController();
+  const timeout = setTimeout(() => abortController.abort(), DATA_FETCH_TIMEOUT_MS);
 
   try {
-    const supabase = await createClient();
+    const supabase = createPublicClient();
 
     // Fetch featured projects
     const { data, error } = await supabase
       .from('projects')
-      .select('*')
+      .select('id, title, slug, description, tech_stack, featured_description, start_date')
       .eq('status', 'published')
       .eq('featured', true)
       .order('start_date', { ascending: false })
-      .limit(4);
+      .limit(4)
+      .abortSignal(abortController.signal);
 
     if (error) {
       console.error('Error fetching featured projects:', error);
@@ -31,9 +36,11 @@ export default async function Home() {
       featuredProjects = data || [];
     }
   } catch (error) {
-    console.error('Error initializing Supabase client or fetching projects:', error);
+    console.error('Error fetching homepage projects:', error);
     // Continue with empty projects array instead of crashing
     featuredProjects = [];
+  } finally {
+    clearTimeout(timeout);
   }
   return (
     <div className="min-h-screen">
