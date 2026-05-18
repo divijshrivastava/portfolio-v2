@@ -14,6 +14,8 @@ import {
 import { NavLink } from '@/components/admin/nav-link';
 import { NotificationBell } from '@/components/admin/notification-bell';
 
+export const dynamic = 'force-dynamic';
+
 const adminNav = [
   { name: 'Dashboard', href: '/admin', iconName: 'LayoutDashboard' },
   { name: 'Blogs', href: '/admin/blogs', iconName: 'FileText' },
