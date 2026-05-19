@@ -55,7 +55,7 @@ export function PageVisitsChart({ data, primaryColor }: PageVisitsChartProps) {
             border: '1px solid hsl(var(--border))',
             borderRadius: '6px',
           }}
-          formatter={(value: number | undefined) => {
+          formatter={(value) => {
             if (value === undefined) return '';
             return `${value} visits`;
           }}
@@ -89,7 +89,7 @@ export function TimeSeriesChart({ data, primaryColor }: TimeSeriesChartProps) {
             border: '1px solid hsl(var(--border))',
             borderRadius: '6px',
           }}
-          formatter={(value: number | undefined) => {
+          formatter={(value) => {
             if (value === undefined) return '';
             return `${value} visits`;
           }}
@@ -135,7 +135,7 @@ export function IPChart({ data, secondaryColor }: IPChartProps) {
             border: '1px solid hsl(var(--border))',
             borderRadius: '6px',
           }}
-          formatter={(value: number | undefined) => {
+          formatter={(value) => {
             if (value === undefined) return '';
             return `${value} visits`;
           }}
@@ -169,7 +169,7 @@ export function HourlyChart({ data, primaryColor }: HourlyChartProps) {
             border: '1px solid hsl(var(--border))',
             borderRadius: '6px',
           }}
-          formatter={(value: number | undefined) => {
+          formatter={(value) => {
             if (value === undefined) return '';
             return `${value} visits`;
           }}

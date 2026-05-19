@@ -1,27 +1,22 @@
-import { Card, CardContent } from '@/components/ui/card';
-import { Code, Database, Globe, Server } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 export default function AboutPage() {
-  const skills = [
+  const skillGroups = [
     {
-      icon: Globe,
-      title: 'Frontend Development',
-      description: 'React, Next.js, TypeScript, Tailwind CSS',
+      title: 'Distributed Systems & Messaging',
+      skills: ['Kafka', 'Event-driven architecture', 'Microservices', 'System integration', 'Circuit breakers'],
     },
     {
-      icon: Server,
-      title: 'Backend Development',
-      description: 'Node.js, Java, Spring Boot, RESTful APIs',
+      title: 'Backend Architecture',
+      skills: ['Java', 'Spring Boot', 'Python', 'RESTful APIs', 'API design (Swagger/OpenAPI)'],
     },
     {
-      icon: Database,
-      title: 'Databases',
-      description: 'PostgreSQL, MySQL, MongoDB, Supabase',
+      title: 'Data & Storage',
+      skills: ['Elasticsearch', 'PostgreSQL', 'MongoDB', 'DB2', 'MySQL', 'Data migration', 'ETL pipelines'],
     },
     {
-      icon: Code,
-      title: 'Tools & Technologies',
-      description: 'Git, Docker, AWS, Vercel, CI/CD',
+      title: 'Infrastructure & Observability',
+      skills: ['Docker', 'OpenShift', 'Jenkins', 'CI/CD', 'Monitoring', 'Feature toggles (LaunchDarkly)'],
     },
   ];
 
@@ -30,43 +25,107 @@ export default function AboutPage() {
       <div className="max-w-4xl mx-auto">
         <h1 className="text-4xl sm:text-5xl font-bold mb-4 text-primary">About Me</h1>
         <p className="text-xl text-muted-foreground mb-12">
-          Full-stack developer passionate about creating amazing web experiences
+          Backend engineer who designs, builds, and owns production systems end-to-end.
         </p>
 
-        <div className="space-y-8">
+        <div className="space-y-12">
+          {/* Bio */}
           <Card>
             <CardContent className="p-8">
-              <h2 className="text-2xl font-bold mb-4">Hello!</h2>
               <div className="space-y-4 text-muted-foreground">
                 <p>
-                  With 8+ years of experience as a senior software engineer, I've built production systems across fintech, e-commerce, and enterprise domains. I take ownership of projects from conception to deployment, collaborating with cross-functional teams to deliver solutions that balance technical excellence with business impact.
+                  I'm a senior backend engineer with 8+ years of experience building production systems in fintech and enterprise environments. At Morgan Stanley, TIAA, and TCS, I've designed and shipped trading platforms, ESG analytics systems, event-driven architectures, and complex multi-system integrations.
                 </p>
                 <p>
-                  My work spans full-stack web development, distributed systems, and data engineering, always with a focus on scalability, performance, and maintainability. I enjoy tackling challenging problems and creating efficient solutions that make a difference.
+                  I think about engineering in terms of ownership and outcomes. I don't just write code — I design the system, choose the right data stores, define the integration contracts, build the monitoring, and own it in production. I've replaced 6-figure vendor platforms with in-house solutions, led engineering teams, and won back-to-back Tech Showcase awards for the systems I've built.
                 </p>
                 <p>
-                  When I'm not coding, you can find me writing technical articles, contributing to
-                  open source projects, or exploring new technologies and frameworks.
+                  When I'm not building systems, I write about architecture decisions, production debugging, and the trade-offs that don't show up in tutorials.
                 </p>
               </div>
             </CardContent>
           </Card>
 
+          {/* Architecture Philosophy */}
           <div>
-            <h2 className="text-2xl font-bold mb-6">Skills & Expertise</h2>
+            <h2 className="text-2xl font-bold mb-6 text-primary">Architecture Philosophy</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {skills.map((skill, index) => {
-                const Icon = skill.icon;
-                return (
-                  <Card key={index} className="hover:border-primary/30 transition-all duration-300 group">
-                    <CardContent className="p-6">
-                      <Icon className="h-10 w-10 text-primary group-hover:text-secondary transition-colors mb-4" />
-                      <h3 className="text-lg font-semibold mb-2 text-primary">{skill.title}</h3>
-                      <p className="text-muted-foreground">{skill.description}</p>
-                    </CardContent>
-                  </Card>
-                );
-              })}
+              <Card className="border-l-4 border-l-primary">
+                <CardContent className="p-6">
+                  <h3 className="font-semibold mb-2">Design for the access pattern, not the tool</h3>
+                  <p className="text-sm text-muted-foreground">
+                    Storage decisions should follow how data is read and written, not which database is trending. I've used Elasticsearch for search, MongoDB for documents, and DB2 for transactional workloads — each chosen for the problem, not the resume.
+                  </p>
+                </CardContent>
+              </Card>
+
+              <Card className="border-l-4 border-l-primary">
+                <CardContent className="p-6">
+                  <h3 className="font-semibold mb-2">Decouple early, integrate deliberately</h3>
+                  <p className="text-sm text-muted-foreground">
+                    Event-driven systems with Kafka give you flexibility, but integration boundaries need explicit contracts. I design protocols and retry strategies before writing the first consumer.
+                  </p>
+                </CardContent>
+              </Card>
+
+              <Card className="border-l-4 border-l-primary">
+                <CardContent className="p-6">
+                  <h3 className="font-semibold mb-2">Own it in production</h3>
+                  <p className="text-sm text-muted-foreground">
+                    A system you can't monitor isn't done. I build observability into every service — dashboards, alerts, structured logging — because understanding what's happening in production is part of the architecture.
+                  </p>
+                </CardContent>
+              </Card>
+
+              <Card className="border-l-4 border-l-primary">
+                <CardContent className="p-6">
+                  <h3 className="font-semibold mb-2">Scale horizontally, think vertically</h3>
+                  <p className="text-sm text-muted-foreground">
+                    Containers and orchestration make horizontal scaling straightforward. The hard part is designing services that can actually scale independently — proper data partitioning, stateless logic, and connection management.
+                  </p>
+                </CardContent>
+              </Card>
+            </div>
+          </div>
+
+          {/* How I Think About Systems */}
+          <Card>
+            <CardContent className="p-8">
+              <h2 className="text-2xl font-bold mb-4 text-primary">How I Think About Systems</h2>
+              <div className="space-y-4 text-muted-foreground">
+                <p>
+                  Every system I build starts with three questions: What's the hardest integration? What's the failure mode? What does 10x look like? These shape the architecture before any code gets written.
+                </p>
+                <p>
+                  At Morgan Stanley, this meant designing a trading platform that could replace a multi-million-dollar vendor product while integrating with 9 downstream systems — each with its own protocol, latency requirements, and failure characteristics. At TIAA, it meant building event-driven state machines on Kafka that could handle the complexity of insurance product lifecycles without losing a single state transition.
+                </p>
+                <p>
+                  I'm most effective when I can own a problem from system design through production deployment. I prefer environments where engineers are trusted to make architectural decisions and held accountable for the outcomes.
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Skills */}
+          <div>
+            <h2 className="text-2xl font-bold mb-6 text-primary">Skills & Expertise</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {skillGroups.map((group) => (
+                <Card key={group.title} className="hover:border-primary/30 transition-all duration-300">
+                  <CardHeader>
+                    <CardTitle className="text-lg text-primary">{group.title}</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="flex flex-wrap gap-2">
+                      {group.skills.map((skill) => (
+                        <span key={skill} className="px-3 py-1 text-sm bg-primary/10 text-primary rounded-full">
+                          {skill}
+                        </span>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
             </div>
           </div>
         </div>

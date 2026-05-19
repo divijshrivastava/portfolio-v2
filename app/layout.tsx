@@ -8,33 +8,33 @@ const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "https://divij.tech";
 
 export const metadata: Metadata = {
   title: {
-    default: "Divij Shrivastava - Senior Full-Stack Engineer",
+    default: "Divij Shrivastava - Senior Backend Engineer",
     template: "%s | Divij Shrivastava"
   },
-  description: "Portfolio of Divij Shrivastava - Senior Full-Stack Engineer specializing in web development, cloud architecture, and modern tech solutions. Explore my projects, blog posts, and technical expertise.",
-  keywords: ["Full-Stack Developer", "Web Developer", "Software Engineer", "React", "Next.js", "Node.js", "Cloud Architecture"],
+  description: "Senior Backend Engineer specializing in distributed systems, system design, and scalable architecture. Built real-time trading platforms, event-driven systems on Kafka, and complex integrations at Morgan Stanley, TIAA, and TCS.",
+  keywords: ["Backend Engineer", "Distributed Systems", "System Design", "Kafka", "Java", "Spring Boot", "Fintech", "Trading Systems"],
   authors: [{ name: "Divij Shrivastava" }],
   creator: "Divij Shrivastava",
   openGraph: {
     type: "website",
     locale: "en_US",
     url: baseUrl,
-    title: "Divij Shrivastava - Senior Full-Stack Engineer",
-    description: "Portfolio of Divij Shrivastava - Senior Full-Stack Engineer specializing in web development, cloud architecture, and modern tech solutions.",
-    siteName: "Divij Shrivastava Portfolio",
+    title: "Divij Shrivastava - Senior Backend Engineer",
+    description: "Senior Backend Engineer specializing in distributed systems, system design, and scalable architecture. Built real-time trading platforms and event-driven systems at Morgan Stanley, TIAA, and TCS.",
+    siteName: "Divij Shrivastava",
     images: [
       {
         url: `${baseUrl}/og-image.png`,
         width: 1200,
         height: 630,
-        alt: "Divij Shrivastava - Senior Full-Stack Engineer",
+        alt: "Divij Shrivastava - Senior Backend Engineer",
       },
     ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "Divij Shrivastava - Senior Full-Stack Engineer",
-    description: "Portfolio of Divij Shrivastava - Senior Full-Stack Engineer specializing in web development and cloud architecture.",
+    title: "Divij Shrivastava - Senior Backend Engineer",
+    description: "Senior Backend Engineer specializing in distributed systems, system design, and scalable architecture at Morgan Stanley, TIAA, and TCS.",
     creator: "@divijshrivastava",
     images: [`${baseUrl}/og-image.png`],
   },

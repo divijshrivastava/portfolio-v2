@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { Github, Linkedin, Twitter } from 'lucide-react';
+import { GithubIcon as Github, LinkedinIcon as Linkedin, TwitterIcon as Twitter } from '@/components/icons';
 import { NewsletterForm } from '@/components/newsletter/newsletter-form';
 
 export function Footer() {
@@ -13,7 +13,7 @@ export function Footer() {
           <div>
             <h3 className="font-semibold text-lg mb-4">Divij Shrivastava</h3>
             <p className="text-sm text-muted-foreground">
-            Full-stack engineer writing about real engineering problems, architectural trade-offs, and lessons learned from building production systems.            </p>
+            Backend engineer writing about distributed systems, architecture decisions, and lessons from building production systems at scale.</p>
           </div>
 
           {/* Quick Links */}

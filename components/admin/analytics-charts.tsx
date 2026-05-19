@@ -66,7 +66,7 @@ export function AnalyticsCharts({
               border: '1px solid hsl(var(--border))',
               borderRadius: '6px',
             }}
-            formatter={(value: number | undefined) => {
+            formatter={(value) => {
               if (value === undefined) return '';
               return `${value} views`;
             }}
@@ -104,7 +104,7 @@ export function AnalyticsCharts({
               border: '1px solid hsl(var(--border))',
               borderRadius: '6px',
             }}
-            formatter={(value: number | undefined) => {
+            formatter={(value) => {
               if (value === undefined) return '';
               return `${value} views`;
             }}
@@ -149,9 +149,9 @@ export function AnalyticsCharts({
               border: '1px solid hsl(var(--border))',
               borderRadius: '6px',
             }}
-            formatter={(value: number | undefined) => {
+            formatter={(value) => {
               if (value === undefined) return '';
-              return `${value.toLocaleString()} views`;
+              return `${Number(value).toLocaleString()} views`;
             }}
           />
           <Legend />
@@ -180,9 +180,9 @@ export function AnalyticsCharts({
               border: '1px solid hsl(var(--border))',
               borderRadius: '6px',
             }}
-            formatter={(value: number | undefined) => {
+            formatter={(value) => {
               if (value === undefined) return '';
-              return `${value.toLocaleString()} views`;
+              return `${Number(value).toLocaleString()} views`;
             }}
           />
           <Legend />

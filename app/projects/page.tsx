@@ -3,7 +3,8 @@ import Link from 'next/link';
 import { createClient } from '@/lib/supabase/server';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Github, Youtube, Briefcase } from 'lucide-react';
+import { Briefcase } from 'lucide-react';
+import { GithubIcon as Github, YoutubeIcon as Youtube } from '@/components/icons';
 import { getProjectImageUrl } from '@/lib/utils/youtube';
 
 export const revalidate = 3600;
@@ -30,19 +31,19 @@ export default async function ProjectsPage() {
   return (
     <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-12">
       <div className="max-w-6xl mx-auto">
-        <h1 className="text-4xl sm:text-5xl font-bold mb-4 text-primary">Projects</h1>
+        <h1 className="text-4xl sm:text-5xl font-bold mb-4 text-primary">Systems</h1>
         <p className="text-xl text-muted-foreground mb-12">
-          Production systems from 8+ years at Morgan Stanley, TIAA, and TCS, plus side projects exploring new technologies.
+          Production systems I've designed, built, and owned — from architecture decisions through deployment and scale. 8+ years at Morgan Stanley, TIAA, and TCS.
         </p>
 
-        {/* Professional Work Experience Section */}
+        {/* Production Systems Section */}
         <section className="mb-16">
           <div className="flex items-center gap-3 mb-6">
             <Briefcase className="h-6 w-6 text-primary" />
-            <h2 className="text-3xl font-bold text-primary">Professional Work Experience</h2>
+            <h2 className="text-3xl font-bold text-primary">Production Systems</h2>
           </div>
           <p className="text-muted-foreground mb-8">
-            Enterprise-scale systems built at top financial institutions, managing millions of transactions and serving thousands of users.
+            Backend systems built at top financial institutions — real-time trading platforms, event-driven architectures, and complex integrations serving thousands of users at scale.
           </p>
 
           {professionalProjects && professionalProjects.length > 0 ? (

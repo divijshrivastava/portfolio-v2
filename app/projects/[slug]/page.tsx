@@ -1,7 +1,9 @@
 import { notFound } from 'next/navigation';
 import Image from 'next/image';
 import { createClient } from '@/lib/supabase/server';
-import { Calendar, ArrowLeft, ExternalLink, Github, Youtube, Briefcase, CalendarDays } from 'lucide-react';
+import { Calendar, ArrowLeft, ExternalLink, Briefcase, CalendarDays } from 'lucide-react';
+import { GithubIcon as Github, YoutubeIcon as Youtube } from '@/components/icons';
+import { ProjectPreview } from '@/components/project-preview';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import Link from 'next/link';
@@ -117,6 +119,38 @@ export default async function ProjectDetail({
   const displayImage = getProjectImageUrl(project.image_url, project.youtube_url);
   const isProfessional = project.project_type === 'professional';
 
+  // Check if the project URL allows iframe embedding
+  let canEmbed = false;
+  if (project.project_url) {
+    try {
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 3000);
+      const res = await fetch(project.project_url, {
+        method: 'HEAD',
+        signal: controller.signal,
+        redirect: 'follow',
+      });
+      clearTimeout(timeout);
+      const xfo = res.headers.get('x-frame-options');
+      if (xfo) {
+        const v = xfo.toLowerCase();
+        if (v === 'deny' || v === 'sameorigin') {
+          canEmbed = false;
+        } else {
+          canEmbed = true;
+        }
+      } else {
+        canEmbed = true;
+      }
+      const csp = res.headers.get('content-security-policy');
+      if (csp?.includes('frame-ancestors') && !csp.includes('frame-ancestors *')) {
+        canEmbed = false;
+      }
+    } catch {
+      canEmbed = false;
+    }
+  }
+
   // Format date range for professional projects
   const getDateRange = () => {
     if (!isProfessional || !project.start_date) return null;
@@ -216,15 +250,13 @@ export default async function ProjectDetail({
             </div>
           )}
 
-          <div className="flex flex-wrap gap-4 pt-6 border-t">
-            {project.project_url && (
-              <Button asChild size="lg">
-                <a href={project.project_url} target="_blank" rel="noopener noreferrer">
-                  <ExternalLink className="mr-2 h-5 w-5" />
-                  View Live Project
-                </a>
-              </Button>
-            )}
+          {project.project_url && (
+            <div className="pt-6 border-t">
+              <ProjectPreview url={project.project_url} title={project.title} canEmbed={canEmbed} />
+            </div>
+          )}
+
+          <div className="flex flex-wrap gap-4 pt-6">
             {project.github_url && (
               <Button asChild variant="outline" size="lg">
                 <a href={project.github_url} target="_blank" rel="noopener noreferrer">

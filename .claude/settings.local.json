@@ -73,7 +73,21 @@
       "WebFetch(domain:divij-qa.tech)",
       "Bash(if [ -f .vercel/project.json ])",
       "Bash(then cat .vercel/project.json)",
-      "Bash(else echo \"No .vercel/project.json found\")"
+      "Bash(else echo \"No .vercel/project.json found\")",
+      "Bash(npx next build:*)",
+      "Bash(npx tsc:*)",
+      "Bash(git stash:*)",
+      "Bash(npm outdated:*)",
+      "Bash(npm update:*)",
+      "Bash(npx vitest run:*)",
+      "Bash(source:*)",
+      "Bash(nvm use:*)",
+      "Bash(npm ls:*)",
+      "WebFetch(domain:divij.tech)",
+      "Bash(dig:*)",
+      "Bash(nslookup:*)",
+      "mcp__claude_ai_Vercel__get_project",
+      "Bash(head:*)"
     ]
   }
 }

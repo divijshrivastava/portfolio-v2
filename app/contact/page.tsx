@@ -5,7 +5,8 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { MessageSquare, Send, Github, Linkedin, ExternalLink, AlertCircle } from 'lucide-react';
+import { MessageSquare, Send, ExternalLink, AlertCircle } from 'lucide-react';
+import { GithubIcon as Github, LinkedinIcon as Linkedin } from '@/components/icons';
 import { submitContactForm } from '@/app/actions/contact';
 
 export default function ContactPage() {
@@ -43,9 +44,9 @@ export default function ContactPage() {
   return (
     <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-12">
       <div className="max-w-2xl mx-auto">
-        <h1 className="text-4xl sm:text-5xl font-bold mb-4 text-primary">Get In Touch</h1>
+        <h1 className="text-4xl sm:text-5xl font-bold mb-4 text-primary">Let's Build Something That Scales</h1>
         <p className="text-xl text-muted-foreground mb-12">
-          I'm open to full-time engineering roles, freelance projects, technical consulting, open-source collaboration, and speaking/mentoring opportunities. Let's discuss how we can work together.
+          I'm looking for Staff/Senior Backend Engineer roles where I can design systems, lead technical decisions, and own production infrastructure. If you need someone who can architect distributed systems, integrate complex platforms, or lead a backend team — let's talk.
         </p>
 
         {submitted ? (
