@@ -53,16 +53,16 @@ jobs:
         env:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
 
-      - name: Build QA database URL
+      - name: Build QA pooler database URL
         if: ${{ steps.secrets.outputs.skip != 'true' }}
         shell: bash
         run: |
-          ENCODED_PASSWORD=$(node -e "console.log(encodeURIComponent(process.env.SUPABASE_DB_PASSWORD))")
-          DB_URL="postgresql://postgres:${ENCODED_PASSWORD}@db.${SUPABASE_PROJECT_REF}.supabase.co:5432/postgres?sslmode=require"
+          POOLER_URL=$(cat supabase/.temp/pooler-url)
+          export POOLER_URL
+          DB_URL=$(node -e "const u = new URL(process.env.POOLER_URL); u.password = process.env.SUPABASE_DB_PASSWORD; u.searchParams.set('sslmode', 'require'); u.searchParams.set('connect_timeout', '30'); console.log(u.toString())")
           echo "::add-mask::$DB_URL"
           echo "SUPABASE_DB_URL=$DB_URL" >> "$GITHUB_ENV"
         env:
-          SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_QA_PROJECT_REF }}
           SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_QA_DB_PASSWORD }}
 
       - name: Apply migrations to QA
@@ -75,8 +75,8 @@ jobs:
               if "$@"; then
                 return 0
               fi
-              echo "Attempt $attempt failed. Retrying in $((attempt * 10)) seconds..."
-              sleep $((attempt * 10))
+              echo "Attempt $attempt failed. Retrying in $((attempt * 20)) seconds..."
+              sleep $((attempt * 20))
             done
             "$@"
           }
@@ -159,16 +159,16 @@ jobs:
         env:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
 
-      - name: Build Production database URL
+      - name: Build Production pooler database URL
         if: ${{ steps.secrets.outputs.skip != 'true' }}
         shell: bash
         run: |
-          ENCODED_PASSWORD=$(node -e "console.log(encodeURIComponent(process.env.SUPABASE_DB_PASSWORD))")
-          DB_URL="postgresql://postgres:${ENCODED_PASSWORD}@db.${SUPABASE_PROJECT_REF}.supabase.co:5432/postgres?sslmode=require"
+          POOLER_URL=$(cat supabase/.temp/pooler-url)
+          export POOLER_URL
+          DB_URL=$(node -e "const u = new URL(process.env.POOLER_URL); u.password = process.env.SUPABASE_DB_PASSWORD; u.searchParams.set('sslmode', 'require'); u.searchParams.set('connect_timeout', '30'); console.log(u.toString())")
           echo "::add-mask::$DB_URL"
           echo "SUPABASE_DB_URL=$DB_URL" >> "$GITHUB_ENV"
         env:
-          SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROD_PROJECT_REF }}
           SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_PROD_DB_PASSWORD }}
 
       - name: Apply migrations to Production
@@ -181,8 +181,8 @@ jobs:
               if "$@"; then
                 return 0
               fi
-              echo "Attempt $attempt failed. Retrying in $((attempt * 10)) seconds..."
-              sleep $((attempt * 10))
+              echo "Attempt $attempt failed. Retrying in $((attempt * 20)) seconds..."
+              sleep $((attempt * 20))
             done
             "$@"
           }
