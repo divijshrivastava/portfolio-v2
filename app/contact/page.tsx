@@ -42,7 +42,7 @@ export default function ContactPage() {
 
   return (
     <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-12">
-      <div className="max-w-2xl mx-auto">
+      <div className="max-w-4xl mx-auto">
         <h1 className="text-4xl sm:text-5xl font-bold mb-4 text-primary">Get In Touch</h1>
         <p className="text-xl text-muted-foreground mb-12">
           I'm open to full-time engineering roles, freelance projects, technical consulting, open-source collaboration, and speaking/mentoring opportunities. Let's discuss how we can work together.
